@@ -88,9 +88,11 @@ export default function DashboardPage() {
                             <p className="text-muted-foreground">
                                 Uma mistura perfeita de conforto e estilo para suas aventuras na cidade. Este look combina uma jaqueta jeans clássica com uma camiseta de algodão macio e joggers pretos versáteis. Tênis brancos completam o conjunto para caminhadas durante todo o dia.
                             </p>
-                            <Button className="bg-accent hover:bg-accent/90">
-                                Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <Link href="/outfit-of-the-day">
+                                <Button className="bg-accent hover:bg-accent/90">
+                                    Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>

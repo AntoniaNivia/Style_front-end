@@ -112,6 +112,8 @@ function AppSidebar() {
 
     const allNavItems = user?.type === 'store' ? [...navItems, ...storeNavItems] : navItems;
     
+    const mainNavItems = allNavItems.filter(item => item.href !== '/outfit-of-the-day');
+
     return (
         <Sidebar collapsible="icon" className="border-r">
             <SidebarHeader>
@@ -124,7 +126,7 @@ function AppSidebar() {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarMenu>
-                    {allNavItems.map((item) => (
+                    {mainNavItems.map((item) => (
                         <SidebarMenuItem key={item.href}>
                             <Link href={item.href} legacyBehavior passHref>
                                 <SidebarMenuButton
