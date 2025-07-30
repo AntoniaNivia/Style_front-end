@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
-  Home,
   Users,
   Package,
   Bot,
@@ -47,6 +46,7 @@ import {
   Store,
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
+import { useRouter } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel', icon: LayoutGrid },
@@ -62,6 +62,13 @@ const storeNavItems = [
 
 function UserNav() {
   const { user } = useUser();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Mock logout logic
+    router.push('/login');
+  };
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -82,17 +89,17 @@ function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Perfil</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <Link href="/login">
-            <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
-            </DropdownMenuItem>
+        <Link href="/profile" passHref>
+          <DropdownMenuItem>
+            <User className="mr-2 h-4 w-4" />
+            <span>Perfil</span>
+          </DropdownMenuItem>
         </Link>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sair</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

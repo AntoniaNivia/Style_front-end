@@ -21,23 +21,26 @@ type FormValues = {
   mannequinPreference: 'Woman' | 'Man' | 'Neutral';
 };
 
-// Mock user's wardrobe data
-const mockWardrobe: Omit<ClothingItem, 'id' | 'userId'>[] = [
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'T-Shirt', color: 'White', season: 'Summer', occasion: 'Casual', tags: ['cotton', 'basic'] },
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'Jeans', color: 'Blue', season: 'All', occasion: 'Casual', tags: ['denim', 'straight-leg'] },
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'Sneakers', color: 'White', season: 'All', occasion: 'Casual', tags: ['leather', 'comfy'] },
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'Dress', color: 'Floral', season: 'Spring', occasion: 'Party', tags: ['midi', 'romantic'] },
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'Blazer', color: 'Black', season: 'All', occasion: 'Work', tags: ['professional', 'classic'] },
-    { photoDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', type: 'Pants', color: 'Beige', season: 'Autumn', occasion: 'Work', tags: ['chinos', 'smart-casual'] },
+// Mock user's wardrobe data with placeholder images
+const mockWardrobe: Omit<ClothingItem, 'id' | 'userId' | 'photoUrl'>[] = [
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'T-Shirt', color: 'White', season: 'Summer', occasion: 'Casual', tags: ['cotton', 'basic'] },
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Jeans', color: 'Blue', season: 'All', occasion: 'Casual', tags: ['denim', 'straight-leg'] },
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Sneakers', color: 'White', season: 'All', occasion: 'Casual', tags: ['leather', 'comfy'] },
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Dress', color: 'Floral', season: 'Spring', occasion: 'Party', tags: ['midi', 'romantic'] },
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Blazer', color: 'Black', season: 'All', occasion: 'Work', tags: ['professional', 'classic'] },
+    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Pants', color: 'Beige', season: 'Autumn', occasion: 'Work', tags: ['chinos', 'smart-casual'] },
 ];
 
 export default function BuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [outfit, setOutfit] = useState<GenerateOutfitOutput | null>(null);
   const { toast } = useToast();
-  const { register, handleSubmit, watch, setValue } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
-        mannequinPreference: 'Woman'
+        mannequinPreference: 'Woman',
+        climate: 'Ensolarado',
+        occasion: 'Almoço casual',
+        userStyle: 'Moderno e elegante',
     }
   });
 
@@ -74,20 +77,23 @@ export default function BuilderPage() {
                 <CardContent className="space-y-4">
                      <div className="grid gap-2">
                         <Label htmlFor="climate">Clima</Label>
-                        <Input id="climate" placeholder="ex: Quente, Chuvoso, Frio" {...register("climate", { required: true })} />
+                        <Input id="climate" placeholder="ex: Quente, Chuvoso, Frio" {...register("climate", { required: "Clima é obrigatório" })} />
+                        {errors.climate && <p className="text-sm text-destructive">{errors.climate.message}</p>}
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="occasion">Ocasião</Label>
-                        <Input id="occasion" placeholder="ex: Reunião de trabalho, Brunch casual" {...register("occasion", { required: true })} />
+                        <Input id="occasion" placeholder="ex: Reunião de trabalho, Brunch casual" {...register("occasion", { required: "Ocasião é obrigatória" })} />
+                         {errors.occasion && <p className="text-sm text-destructive">{errors.occasion.message}</p>}
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="userStyle">Seu Estilo</Label>
-                        <Input id="userStyle" placeholder="ex: Minimalista, Boho, Streetwear" {...register("userStyle", { required: true })} />
+                        <Input id="userStyle" placeholder="ex: Minimalista, Boho, Streetwear" {...register("userStyle", { required: "Seu estilo é obrigatório" })} />
+                         {errors.userStyle && <p className="text-sm text-destructive">{errors.userStyle.message}</p>}
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="mannequinPreference">Manequim</Label>
                         <Select
-                            defaultValue="Woman"
+                            value={watch('mannequinPreference')}
                             onValueChange={(value: 'Woman' | 'Man' | 'Neutral') => setValue('mannequinPreference', value)}
                         >
                             <SelectTrigger id="mannequinPreference">
@@ -135,7 +141,7 @@ export default function BuilderPage() {
                             </CardHeader>
                             <CardContent>
                                 <Image 
-                                    src={outfit.mannequinPhotoDataUri || 'https://placehold.co/400x600'}
+                                    src={outfit.mannequinPhotoDataUri || 'https://placehold.co/400x600.png'}
                                     alt="Look gerado em um manequim"
                                     width={400}
                                     height={600}

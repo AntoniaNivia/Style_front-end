@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,11 +7,20 @@ import { useUser } from "@/hooks/use-user";
 import { Badge } from "@/components/ui/badge";
 import { Edit, AtSign, Tag, Shirt, Sparkles, User as UserIcon } from "lucide-react";
 import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProfilePage() {
     const { user } = useUser();
+    const { toast } = useToast();
 
     if (!user) return null;
+    
+    const handleEdit = () => {
+        toast({
+            title: "Função em breve!",
+            description: "A edição de perfil estará disponível em futuras atualizações."
+        })
+    }
 
     return (
         <div className="flex flex-col gap-8">
@@ -25,7 +36,7 @@ export default function ProfilePage() {
                             <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="avatar person" />
                             <AvatarFallback>{user.name[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <Button variant="outline" size="sm"><Edit className="mr-2 h-3 w-3" /> Editar Perfil</Button>
+                        <Button variant="outline" size="sm" onClick={handleEdit}><Edit className="mr-2 h-3 w-3" /> Editar Perfil</Button>
                     </div>
                     <div className="flex-1 space-y-4">
                         <div className="flex items-baseline gap-4">
@@ -72,7 +83,7 @@ export default function ProfilePage() {
                         {Array.from({ length: 6 }).map((_, i) => (
                              <Image 
                                 key={i}
-                                src={`https://placehold.co/200x250`}
+                                src={`https://placehold.co/200x250.png`}
                                 alt={`Look favorito ${i+1}`}
                                 width={200}
                                 height={250}
@@ -91,7 +102,7 @@ export default function ProfilePage() {
                        {Array.from({ length: 3 }).map((_, i) => (
                              <Image 
                                 key={i}
-                                src={`https://placehold.co/200x250`}
+                                src={`https://placehold.co/200x250.png`}
                                 alt={`Look gerado ${i+1}`}
                                 width={200}
                                 height={250}

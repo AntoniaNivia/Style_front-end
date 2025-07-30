@@ -67,19 +67,27 @@ const prompt = ai.definePrompt({
 
 Guarda-roupa:
 {{#each wardrobe}}
-- Tipo: {{this.type}}, Cor: {{this.color}}, Estação: {{this.season}}, Ocasião: {{this.occasion}}, Etiquetas: {{this.tags}}
+- Tipo: {{this.type}}, Cor: {{this.color}}, Estação: {{this.season}}, Ocasião: {{this.occasion}}, Etiquetas: {{this.tags}}. O photoDataUri para esta peça é {{{this.photoDataUri}}}.
+  {{#if @last}}
+
+  {{else}}
+  
+  {{/if}}
 {{/each}}
 
 Estilo do usuário: {{{userStyle}}}
 Clima: {{{climate}}}
 Ocasião: {{{occasion}}}
 
-Você deve escolher itens do guarda-roupa para criar um look completo que seja apropriado para o estilo do usuário, o clima e a ocasião. Forneça uma justificativa para cada item escolhido. Retorne a sugestão de look como um array de itens com photoDataUri, tipo e descrição.
+Você deve escolher itens do guarda-roupa para criar um look completo que seja apropriado para o estilo do usuário, o clima e a ocasião. Forneça uma justificativa para cada item escolhido. 
+Para cada item no look sugerido, você DEVE retornar o photoDataUri original do item do guarda-roupa.
+
+Retorne a sugestão de look como um array de itens com photoDataUri, tipo e descrição.
 
 Finalmente, crie uma visualização do look em um manequim {{{mannequinPreference}}}. Retorne o URI de dados da foto do manequim vestindo o look no campo mannequinPhotoDataUri. Se não puder criar a visualização do manequim, deixe o campo vazio.
 
 Produza um objeto JSON que siga o esquema.
-`, // Ensure Handlebars syntax is used correctly
+`,
   config: {
     safetySettings: [
       {

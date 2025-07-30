@@ -4,22 +4,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { BarChart, Heart, Image as ImageIcon, Send } from "lucide-react";
 import Image from "next/image";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 
 export default function PostPage() {
     const { user } = useUser();
+    const router = useRouter();
+    const { toast } = useToast();
 
     // In a real app, this would be handled by middleware or server-side checks.
+    useEffect(() => {
+        if (user?.type !== 'store') {
+            router.replace('/dashboard');
+        }
+    }, [user, router]);
+
+    const handlePost = (e: React.FormEvent) => {
+        e.preventDefault();
+        toast({
+            title: "Postagem Criada!",
+            description: "Sua nova postagem já está visível no Feed de Inspiração.",
+        })
+    }
+
     if (user?.type !== 'store') {
-        redirect('/dashboard');
+        return <div className="flex h-full w-full items-center justify-center"><p>Redirecionando...</p></div>;
     }
 
     return (
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <form onSubmit={handlePost} className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
                 <Card>
                     <CardHeader>
@@ -29,13 +47,13 @@ export default function PostPage() {
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="post-image">Imagem</Label>
-                            <Input id="post-image" type="file" />
+                            <Input id="post-image" type="file" required/>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="caption">Legenda</Label>
-                            <Textarea id="caption" placeholder="Descreva seu look, mencione peças-chave e adicione #hashtags..." />
+                            <Textarea id="caption" placeholder="Descreva seu look, mencione peças-chave e adicione #hashtags..." required/>
                         </div>
-                        <Button className="w-full sm:w-auto bg-accent hover:bg-accent/90">
+                        <Button type="submit" className="w-full sm:w-auto bg-accent hover:bg-accent/90">
                             <Send className="mr-2 h-4 w-4" /> Postar no Feed
                         </Button>
                     </CardContent>
@@ -68,7 +86,7 @@ export default function PostPage() {
                         {Array.from({length: 2}).map((_, i) => (
                              <div key={i} className="flex gap-4 items-center">
                                 <Image
-                                    src={`https://placehold.co/100x120`}
+                                    src={`https://placehold.co/100x120.png`}
                                     alt="Postagem recente"
                                     width={80}
                                     height={100}
@@ -87,6 +105,6 @@ export default function PostPage() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </form>
     );
 }
