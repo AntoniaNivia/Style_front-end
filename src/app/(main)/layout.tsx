@@ -47,6 +47,8 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
+import { WardrobeProvider } from '@/hooks/use-wardrobe';
+import { SheetTitle } from '@/components/ui/sheet';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel', icon: LayoutGrid },
@@ -116,6 +118,7 @@ function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon" className="border-r">
+             <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
             <SidebarHeader>
                 <div className="flex h-12 items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
                     <StyleWiseLogo className="h-8 w-auto" />
@@ -173,17 +176,19 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="flex flex-col">
-                <header className="sticky top-0 z-10 hidden h-16 items-center justify-end gap-4 border-b bg-background px-4 sm:px-6 md:flex">
-                    <UserNav />
-                </header>
-                <MobileHeader />
-                <main className="flex-1 overflow-auto p-4 sm:p-6">
-                    {children}
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
+        <WardrobeProvider>
+            <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset className="flex flex-col">
+                    <header className="sticky top-0 z-10 hidden h-16 items-center justify-end gap-4 border-b bg-background px-4 sm:px-6 md:flex">
+                        <UserNav />
+                    </header>
+                    <MobileHeader />
+                    <main className="flex-1 overflow-auto p-4 sm:p-6">
+                        {children}
+                    </main>
+                </SidebarInset>
+            </SidebarProvider>
+        </WardrobeProvider>
     );
 }

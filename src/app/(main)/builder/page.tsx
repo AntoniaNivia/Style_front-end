@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { ClothingItem } from "@/lib/types";
+import { useWardrobe } from "@/hooks/use-wardrobe";
 import { Bot, Loader2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -21,20 +21,12 @@ type FormValues = {
   mannequinPreference: 'Woman' | 'Man' | 'Neutral';
 };
 
-// Mock user's wardrobe data with placeholder images
-const mockWardrobe: Omit<ClothingItem, 'id' | 'userId' | 'photoUrl'>[] = [
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'T-Shirt', color: 'White', season: 'Summer', occasion: 'Casual', tags: ['cotton', 'basic'] },
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Jeans', color: 'Blue', season: 'All', occasion: 'Casual', tags: ['denim', 'straight-leg'] },
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Sneakers', color: 'White', season: 'All', occasion: 'Casual', tags: ['leather', 'comfy'] },
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Dress', color: 'Floral', season: 'Spring', occasion: 'Party', tags: ['midi', 'romantic'] },
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Blazer', color: 'Black', season: 'All', occasion: 'Work', tags: ['professional', 'classic'] },
-    { photoDataUri: 'https://placehold.co/300x400.png', type: 'Pants', color: 'Beige', season: 'Autumn', occasion: 'Work', tags: ['chinos', 'smart-casual'] },
-];
-
 export default function BuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [outfit, setOutfit] = useState<GenerateOutfitOutput | null>(null);
   const { toast } = useToast();
+  const { wardrobe } = useWardrobe(); // Use the shared wardrobe state
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
         mannequinPreference: 'Woman',
@@ -48,8 +40,17 @@ export default function BuilderPage() {
     setIsLoading(true);
     setOutfit(null);
     try {
+        if (wardrobe.length === 0) {
+            toast({
+                title: "Guarda-roupa Vazio",
+                description: "Adicione itens ao seu guarda-roupa primeiro!",
+                variant: "destructive",
+            });
+            return;
+        }
+
         const input: GenerateOutfitInput = {
-            wardrobe: mockWardrobe,
+            wardrobe: wardrobe, // Pass the current wardrobe to the AI
             ...data
         }
       const result = await generateOutfit(input);
