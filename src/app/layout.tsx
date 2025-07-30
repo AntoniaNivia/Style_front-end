@@ -12,7 +12,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "StyleWise",
-  description: "Virtual styling system with AI, for stores and individuals.",
+  description: "Sistema de estilo virtual com IA, para lojas e indivíduos.",
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={cn("font-sans antialiased", poppins.variable)}>
         {children}
         <Toaster />

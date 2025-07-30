@@ -54,8 +54,8 @@ export default function BuilderPage() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error Generating Outfit",
-        description: "Something went wrong. Please try again.",
+        title: "Erro ao Gerar Look",
+        description: "Algo deu errado. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -67,44 +67,44 @@ export default function BuilderPage() {
     <div className="grid lg:grid-cols-3 gap-8 items-start">
         <Card className="lg:col-span-1 sticky top-6">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Bot className="h-6 w-6" /> AI Outfit Builder</CardTitle>
-                <CardDescription>Tell the AI what you need, and it will create the perfect look from your wardrobe.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Bot className="h-6 w-6" /> Construtor de Looks com IA</CardTitle>
+                <CardDescription>Diga à IA o que você precisa e ela criará o look perfeito do seu guarda-roupa.</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <CardContent className="space-y-4">
                      <div className="grid gap-2">
-                        <Label htmlFor="climate">Climate</Label>
-                        <Input id="climate" placeholder="e.g., Warm, Rainy, Cold" {...register("climate", { required: true })} />
+                        <Label htmlFor="climate">Clima</Label>
+                        <Input id="climate" placeholder="ex: Quente, Chuvoso, Frio" {...register("climate", { required: true })} />
                     </div>
                      <div className="grid gap-2">
-                        <Label htmlFor="occasion">Occasion</Label>
-                        <Input id="occasion" placeholder="e.g., Work meeting, Casual brunch" {...register("occasion", { required: true })} />
+                        <Label htmlFor="occasion">Ocasião</Label>
+                        <Input id="occasion" placeholder="ex: Reunião de trabalho, Brunch casual" {...register("occasion", { required: true })} />
                     </div>
                      <div className="grid gap-2">
-                        <Label htmlFor="userStyle">Your Style</Label>
-                        <Input id="userStyle" placeholder="e.g., Minimalist, Boho, Streetwear" {...register("userStyle", { required: true })} />
+                        <Label htmlFor="userStyle">Seu Estilo</Label>
+                        <Input id="userStyle" placeholder="ex: Minimalista, Boho, Streetwear" {...register("userStyle", { required: true })} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="mannequinPreference">Mannequin</Label>
+                        <Label htmlFor="mannequinPreference">Manequim</Label>
                         <Select
                             defaultValue="Woman"
                             onValueChange={(value: 'Woman' | 'Man' | 'Neutral') => setValue('mannequinPreference', value)}
                         >
                             <SelectTrigger id="mannequinPreference">
-                                <SelectValue placeholder="Select mannequin" />
+                                <SelectValue placeholder="Selecione o manequim" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Woman">Woman</SelectItem>
-                                <SelectItem value="Man">Man</SelectItem>
-                                <SelectItem value="Neutral">Neutral</SelectItem>
+                                <SelectItem value="Woman">Mulher</SelectItem>
+                                <SelectItem value="Man">Homem</SelectItem>
+                                <SelectItem value="Neutral">Neutro</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
                         {isLoading ? (
-                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...</>
                         ) : (
-                            <><Sparkles className="mr-2 h-4 w-4" /> Generate Outfit</>
+                            <><Sparkles className="mr-2 h-4 w-4" /> Gerar Look</>
                         )}
                     </Button>
                 </CardContent>
@@ -115,15 +115,15 @@ export default function BuilderPage() {
             {isLoading && (
                  <Card className="flex flex-col items-center justify-center p-12 text-center h-[70vh]">
                      <Loader2 className="h-12 w-12 animate-spin text-accent mb-4" />
-                     <h2 className="text-xl font-semibold">Building your look...</h2>
-                     <p className="text-muted-foreground">Our AI stylist is curating the perfect outfit from your wardrobe. Please wait a moment.</p>
+                     <h2 className="text-xl font-semibold">Montando seu look...</h2>
+                     <p className="text-muted-foreground">Nosso estilista de IA está criando o look perfeito do seu guarda-roupa. Por favor, aguarde um momento.</p>
                 </Card>
             )}
             {!isLoading && !outfit && (
                  <Card className="flex flex-col items-center justify-center p-12 text-center h-[70vh] border-dashed">
                      <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-                     <h2 className="text-xl font-semibold">Your Outfit Awaits</h2>
-                     <p className="text-muted-foreground">Fill out the form to generate your personalized outfit.</p>
+                     <h2 className="text-xl font-semibold">Seu Look te Espera</h2>
+                     <p className="text-muted-foreground">Preencha o formulário para gerar seu look personalizado.</p>
                 </Card>
             )}
             {outfit && (
@@ -131,12 +131,12 @@ export default function BuilderPage() {
                     <div className="md:col-span-1">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Mannequin View</CardTitle>
+                                <CardTitle>Visualização no Manequim</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Image 
                                     src={outfit.mannequinPhotoDataUri || 'https://placehold.co/400x600'}
-                                    alt="Generated outfit on a mannequin"
+                                    alt="Look gerado em um manequim"
                                     width={400}
                                     height={600}
                                     className="rounded-lg object-cover w-full"
@@ -148,7 +148,7 @@ export default function BuilderPage() {
                     <div className="md:col-span-2 space-y-6">
                         <Card>
                              <CardHeader>
-                                <CardTitle>AI Stylist's Notes</CardTitle>
+                                <CardTitle>Notas do Estilista de IA</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground italic">&quot;{outfit.reasoning}&quot;</p>
@@ -156,7 +156,7 @@ export default function BuilderPage() {
                         </Card>
                         <Card>
                              <CardHeader>
-                                <CardTitle>Outfit Items</CardTitle>
+                                <CardTitle>Itens do Look</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                {outfit.outfitSuggestion.map((item, index) => (

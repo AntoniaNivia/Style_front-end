@@ -10,14 +10,14 @@ import Image from "next/image";
 import * as React from 'react';
 
 const clothingItems = [
-  { id: 1, type: 'Blouse', color: 'White', imageUrl: 'https://placehold.co/300x400', hint: 'white blouse' },
-  { id: 2, type: 'Jeans', color: 'Blue', imageUrl: 'https://placehold.co/300x400', hint: 'blue jeans' },
-  { id: 3, type: 'Dress', color: 'Red', imageUrl: 'https://placehold.co/300x400', hint: 'red dress' },
-  { id: 4, type: 'Skirt', color: 'Black', imageUrl: 'https://placehold.co/300x400', hint: 'black skirt' },
-  { id: 5, type: 'Jacket', color: 'Denim', imageUrl: 'https://placehold.co/300x400', hint: 'denim jacket' },
-  { id: 6, type: 'Accessory', color: 'Gold', imageUrl: 'https://placehold.co/300x400', hint: 'gold necklace' },
-  { id: 7, type: 'Shoes', color: 'White', imageUrl: 'https://placehold.co/300x400', hint: 'white sneakers' },
-  { id: 8, type: 'T-Shirt', color: 'Gray', imageUrl: 'https://placehold.co/300x400', hint: 'gray t-shirt' },
+  { id: 1, type: 'Blusa', color: 'Branco', imageUrl: 'https://placehold.co/300x400', hint: 'white blouse' },
+  { id: 2, type: 'Jeans', color: 'Azul', imageUrl: 'https://placehold.co/300x400', hint: 'blue jeans' },
+  { id: 3, type: 'Vestido', color: 'Vermelho', imageUrl: 'https://placehold.co/300x400', hint: 'red dress' },
+  { id: 4, type: 'Saia', color: 'Preto', imageUrl: 'https://placehold.co/300x400', hint: 'black skirt' },
+  { id: 5, type: 'Jaqueta', color: 'Denim', imageUrl: 'https://placehold.co/300x400', hint: 'denim jacket' },
+  { id: 6, type: 'Acessório', color: 'Dourado', imageUrl: 'https://placehold.co/300x400', hint: 'gold necklace' },
+  { id: 7, type: 'Sapatos', color: 'Branco', imageUrl: 'https://placehold.co/300x400', hint: 'white sneakers' },
+  { id: 8, type: 'Camiseta', color: 'Cinza', imageUrl: 'https://placehold.co/300x400', hint: 'gray t-shirt' },
 ];
 
 function AddItemDialog() {
@@ -25,68 +25,68 @@ function AddItemDialog() {
         <Dialog>
             <DialogTrigger asChild>
                 <Button className="bg-accent hover:bg-accent/90">
-                    <Plus className="mr-2 h-4 w-4" /> Add New Item
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Novo Item
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader>
-                    <DialogTitle>Add to Wardrobe</DialogTitle>
+                    <DialogTitle>Adicionar ao Guarda-Roupa</DialogTitle>
                     <DialogDescription>
-                        Upload a photo and details of your new clothing item.
+                        Faça o upload de uma foto e detalhes do seu novo item de vestuário.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="picture">Photo</Label>
+                        <Label htmlFor="picture">Foto</Label>
                         <Input id="picture" type="file" />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="type">Type</Label>
+                        <Label htmlFor="type">Tipo</Label>
                         <Select>
                             <SelectTrigger id="type">
-                                <SelectValue placeholder="Select a type" />
+                                <SelectValue placeholder="Selecione um tipo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="blouse">Blouse</SelectItem>
-                                <SelectItem value="pants">Pants</SelectItem>
-                                <SelectItem value="skirt">Skirt</SelectItem>
-                                <SelectItem value="dress">Dress</SelectItem>
-                                <SelectItem value="accessory">Accessory</SelectItem>
-                                <SelectItem value="shoes">Shoes</SelectItem>
+                                <SelectItem value="blouse">Blusa</SelectItem>
+                                <SelectItem value="pants">Calça</SelectItem>
+                                <SelectItem value="skirt">Saia</SelectItem>
+                                <SelectItem value="dress">Vestido</SelectItem>
+                                <SelectItem value="accessory">Acessório</SelectItem>
+                                <SelectItem value="shoes">Sapatos</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                             <Label htmlFor="color">Color</Label>
-                             <Input id="color" placeholder="e.g., Blue" />
+                             <Label htmlFor="color">Cor</Label>
+                             <Input id="color" placeholder="ex: Azul" />
                         </div>
                          <div className="grid gap-2">
-                             <Label htmlFor="season">Season</Label>
+                             <Label htmlFor="season">Estação</Label>
                             <Select>
                                 <SelectTrigger id="season">
-                                    <SelectValue placeholder="Select a season" />
+                                    <SelectValue placeholder="Selecione uma estação" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="spring">Spring</SelectItem>
-                                    <SelectItem value="summer">Summer</SelectItem>
-                                    <SelectItem value="autumn">Autumn</SelectItem>
-                                    <SelectItem value="winter">Winter</SelectItem>
+                                    <SelectItem value="spring">Primavera</SelectItem>
+                                    <SelectItem value="summer">Verão</SelectItem>
+                                    <SelectItem value="autumn">Outono</SelectItem>
+                                    <SelectItem value="winter">Inverno</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                      <div className="grid gap-2">
-                        <Label htmlFor="occasion">Occasion</Label>
-                        <Input id="occasion" placeholder="e.g., Casual, Work" />
+                        <Label htmlFor="occasion">Ocasião</Label>
+                        <Input id="occasion" placeholder="ex: Casual, Trabalho" />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="tags">Tags</Label>
-                        <Input id="tags" placeholder="e.g., vintage, floral, comfy" />
+                        <Label htmlFor="tags">Etiquetas</Label>
+                        <Input id="tags" placeholder="ex: vintage, floral, confortável" />
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button type="submit" className="bg-accent hover:bg-accent/90">Save item</Button>
+                    <Button type="submit" className="bg-accent hover:bg-accent/90">Salvar item</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -98,11 +98,11 @@ export default function WardrobePage() {
     <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">My Wardrobe</h1>
-                <p className="text-muted-foreground">Browse and manage your clothing items.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Meu Guarda-Roupa</h1>
+                <p className="text-muted-foreground">Navegue e gerencie seus itens de vestuário.</p>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline"><SlidersHorizontal className="mr-2 h-4 w-4" /> Filters</Button>
+                <Button variant="outline"><SlidersHorizontal className="mr-2 h-4 w-4" /> Filtros</Button>
                 <AddItemDialog />
             </div>
         </div>

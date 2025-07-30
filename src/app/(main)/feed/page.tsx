@@ -5,21 +5,21 @@ import Image from "next/image";
 
 const feedItems = [
   { id: 1, user: 'Lila Boutique', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x500', hint: 'woman fashion' },
-  { id: 2, user: 'AI Stylist', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x600', hint: 'man streetstyle' },
+  { id: 2, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x600', hint: 'man streetstyle' },
   { id: 3, user: 'Urban Threads', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x550', hint: 'woman casual' },
-  { id: 4, user: 'AI Stylist', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x520', hint: 'elegant dress' },
+  { id: 4, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x520', hint: 'elegant dress' },
   { id: 5, user: 'Vintage Finds', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x580', hint: 'vintage outfit' },
-  { id: 6, user: 'AI Stylist', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x510', hint: 'summer outfit' },
+  { id: 6, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x510', hint: 'summer outfit' },
   { id: 7, user: 'Sleek Wear', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x530', hint: 'business casual' },
-  { id: 8, user: 'AI Stylist', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x560', hint: 'autumn fashion' },
+  { id: 8, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x560', hint: 'autumn fashion' },
 ];
 
 export default function FeedPage() {
     return (
         <div className="flex flex-col gap-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Inspiration Feed</h1>
-                <p className="text-muted-foreground">Discover looks from our community and AI stylist.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Feed de Inspiração</h1>
+                <p className="text-muted-foreground">Descubra looks da nossa comunidade e do estilista de IA.</p>
             </div>
             
             <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
@@ -28,7 +28,7 @@ export default function FeedPage() {
                         <Card className="overflow-hidden group relative">
                             <Image
                                 src={item.image}
-                                alt={`Look by ${item.user}`}
+                                alt={`Look por ${item.user}`}
                                 width={400}
                                 height={500}
                                 className="w-full h-auto object-cover"

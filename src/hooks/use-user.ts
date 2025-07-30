@@ -10,7 +10,7 @@ export const useUser = (): { user: User | null; isLoading: boolean } => {
     type: 'user', // Can be 'user' or 'store' to test different views
     gender: 'female',
     mannequin: 'Woman',
-    style: 'Casual Chic',
+    style: 'Chique Casual',
     avatarUrl: 'https://placehold.co/100x100'
   };
 
@@ -25,7 +25,7 @@ export const useStore = (): { user: User | null; isLoading: boolean } => {
       type: 'store',
       gender: 'other',
       mannequin: 'Neutral',
-      style: 'Modern & Elegant',
+      style: 'Moderno & Elegante',
       avatarUrl: 'https://placehold.co/100x100'
     };
   

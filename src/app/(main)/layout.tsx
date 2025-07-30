@@ -49,15 +49,15 @@ import {
 import { useUser } from '@/hooks/use-user';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/wardrobe', label: 'Wardrobe', icon: Shirt },
-  { href: '/builder', label: 'AI Builder', icon: Sparkles },
-  { href: '/feed', label: 'Inspiration', icon: Flame },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/dashboard', label: 'Painel', icon: LayoutGrid },
+  { href: '/wardrobe', label: 'Guarda-roupa', icon: Shirt },
+  { href: '/builder', label: 'Construtor IA', icon: Sparkles },
+  { href: '/feed', label: 'Inspiração', icon: Flame },
+  { href: '/profile', label: 'Perfil', icon: User },
 ];
 
 const storeNavItems = [
-    { href: '/post', label: 'Post to Feed', icon: PlusCircle, storeOnly: true },
+    { href: '/post', label: 'Postar no Feed', icon: PlusCircle, storeOnly: true },
 ]
 
 function UserNav() {
@@ -84,13 +84,13 @@ function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>Perfil</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <Link href="/login">
             <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>Sair</span>
             </DropdownMenuItem>
         </Link>
       </DropdownMenuContent>
@@ -147,7 +147,7 @@ function MobileHeader() {
                 onClick={toggleSidebar}
             >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle Menu</span>
+                <span className="sr-only">Alternar Menu</span>
             </Button>
             <StyleWiseLogo className="h-6 w-auto" />
             <div className="ml-auto">
