@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -118,7 +119,6 @@ function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon" className="border-r">
-             <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
             <SidebarHeader>
                 <div className="flex h-12 items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
                     <StyleWiseLogo className="h-8 w-auto" />
