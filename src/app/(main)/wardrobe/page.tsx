@@ -1,4 +1,5 @@
 'use client';
+import { analyzeClothingItem, type AnalyzeClothingOutput } from "@/ai/flows/analyze-clothing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useWardrobe, type ClothingItemWithoutId } from "@/hooks/use-wardrobe";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Loader2, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import Image from "next/image";
 import * as React from 'react';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 
 type AddItemFormValues = Omit<ClothingItemWithoutId, 'photoDataUri'> & {
     photo: FileList;
@@ -19,22 +20,72 @@ type AddItemFormValues = Omit<ClothingItemWithoutId, 'photoDataUri'> & {
 function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
     const { addClothingItem } = useWardrobe();
     const { toast } = useToast();
-    const { register, handleSubmit, control, formState: { errors }, reset } = useForm<AddItemFormValues>();
+    const { register, handleSubmit, control, formState: { errors }, reset, setValue, clearErrors } = useForm<AddItemFormValues>();
+    const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+    const [previewImage, setPreviewImage] = React.useState<string | null>(null);
 
-    const fileToDataUri = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
+            reader.onloadend = () => {
+                setPreviewImage(reader.result as string);
+            };
             reader.readAsDataURL(file);
-        });
+        } else {
+            setPreviewImage(null);
+        }
     };
+
+    const handleAnalyze = async () => {
+        if (!previewImage) {
+            toast({
+                title: "Nenhuma Imagem Selecionada",
+                description: "Por favor, escolha uma imagem para analisar.",
+                variant: "destructive",
+            });
+            return;
+        }
+        setIsAnalyzing(true);
+        try {
+            const result = await analyzeClothingItem({ photoDataUri: previewImage });
+            setValue('type', result.type);
+            setValue('color', result.color);
+            setValue('season', result.season);
+            setValue('occasion', result.occasion);
+            setValue('tags', result.tags as any); // RHF expects a string here
+            clearErrors(); // Clear errors after auto-filling
+            toast({
+                title: "Análise Concluída",
+                description: "Os detalhes da sua peça de roupa foram preenchidos.",
+            })
+        } catch (error) {
+            console.error("Error analyzing item:", error);
+            toast({
+                title: "Erro na Análise",
+                description: "Não foi possível analisar a imagem. Por favor, preencha os campos manualmente.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
 
     const onSubmit: SubmitHandler<AddItemFormValues> = async (data) => {
         try {
-            const photoDataUri = await fileToDataUri(data.photo[0]);
+            if (!previewImage) {
+                 toast({
+                    title: "Erro",
+                    description: "Nenhuma imagem fornecida.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             const newItem: ClothingItemWithoutId = {
-                photoDataUri,
+                photoDataUri: previewImage,
                 type: data.type,
                 color: data.color,
                 season: data.season,
@@ -47,6 +98,7 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                 description: "Sua nova peça foi adicionada ao guarda-roupa.",
             });
             reset();
+            setPreviewImage(null);
             onOpenChange(false); // Close dialog on success
         } catch (error) {
             console.error("Error adding item:", error);
@@ -59,7 +111,13 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
     };
 
     return (
-        <Dialog onOpenChange={onOpenChange}>
+        <Dialog onOpenChange={(open) => {
+            if (!open) {
+                reset();
+                setPreviewImage(null);
+            }
+            onOpenChange(open);
+        }}>
             <DialogTrigger asChild>
                 <Button className="bg-accent hover:bg-accent/90">
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Novo Item
@@ -70,44 +128,33 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                     <DialogHeader>
                         <DialogTitle>Adicionar ao Guarda-Roupa</DialogTitle>
                         <DialogDescription>
-                            Faça o upload de uma foto e detalhes do seu novo item de vestuário.
+                            Faça o upload de uma foto e deixe a IA analisar ou preencha os detalhes manualmente.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid w-full max-w-sm items-center gap-1.5">
-                            <Label htmlFor="picture">Foto</Label>
-                            <Input id="picture" type="file" {...register("photo", { required: "Foto é obrigatória" })} />
+                        <div className="space-y-2">
+                             <Label htmlFor="picture">Foto</Label>
+                            {previewImage && (
+                                <div className="flex justify-center">
+                                    <Image src={previewImage} alt="Preview" width={150} height={200} className="rounded-md object-cover" />
+                                </div>
+                            )}
+                            <div className="flex gap-2 items-center">
+                                <Input id="picture" type="file" {...register("photo", { required: "Foto é obrigatória" })} onChange={handleFileChange} className="flex-1" />
+                                 <Button type="button" size="sm" onClick={handleAnalyze} disabled={isAnalyzing || !previewImage} className="bg-primary hover:bg-primary/90">
+                                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                    <span className="ml-2">Analisar</span>
+                                </Button>
+                            </div>
                             {errors.photo && <p className="text-sm text-destructive">{errors.photo.message}</p>}
                         </div>
+                       
                         <div className="grid gap-2">
                             <Label htmlFor="type">Tipo</Label>
-                            <Controller
-                                name="type"
-                                control={control}
-                                rules={{ required: "Tipo é obrigatório" }}
-                                render={({ field }) => (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger id="type">
-                                            <SelectValue placeholder="Selecione um tipo" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="T-Shirt">Camiseta</SelectItem>
-                                            <SelectItem value="Blouse">Blusa</SelectItem>
-                                            <SelectItem value="Pants">Calça</SelectItem>
-                                            <SelectItem value="Jeans">Jeans</SelectItem>
-                                            <SelectItem value="Skirt">Saia</SelectItem>
-                                            <SelectItem value="Dress">Vestido</SelectItem>
-                                            <SelectItem value="Jacket">Jaqueta</SelectItem>
-                                            <SelectItem value="Blazer">Blazer</SelectItem>
-                                            <SelectItem value="Accessory">Acessório</SelectItem>
-                                            <SelectItem value="Shoes">Sapatos</SelectItem>
-                                            <SelectItem value="Sneakers">Tênis</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            />
+                            <Input id="type" placeholder="ex: Camiseta" {...register("type", { required: "Tipo é obrigatório" })} />
                              {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="color">Cor</Label>
@@ -121,7 +168,7 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                                     control={control}
                                     rules={{ required: "Estação é obrigatória" }}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <SelectTrigger id="season">
                                                 <SelectValue placeholder="Selecione uma estação" />
                                             </SelectTrigger>
