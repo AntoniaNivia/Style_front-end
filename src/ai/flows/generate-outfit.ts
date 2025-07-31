@@ -48,7 +48,7 @@ const GenerateOutfitOutputSchema = z.object({
   mannequinPhotoDataUri: z
     .string()
     .describe(
-      "Uma foto do look sugerido em um manequim, como um URI de dados que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<dados_codificados>'."
+      "Uma foto do look sugerido em um manequim, como um URI de dados que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<dados_codificados>'"
     )
     .optional(),
 });
@@ -94,7 +94,7 @@ const prompt = ai.definePrompt({
       occasion: z.string(),
       mannequinPreference: z.enum(['Woman', 'Man', 'Neutral']),
   })},
-  output: {schema: GenerateOutfitOutputSchema},
+  output: {schema: GenerateOutfitOutputSchema.omit({mannequinPhotoDataUri: true})},
   prompt: `Você é um estilista de IA. Dado o guarda-roupa de um usuário, suas preferências de estilo, o clima atual e a ocasião, você sugerirá um look.
 
 Guarda-roupa (cada item tem um índice implícito baseado em sua posição no array, começando em 0):
@@ -110,8 +110,6 @@ Você deve escolher itens do guarda-roupa para criar um look completo que seja a
 Para cada item no look sugerido, você DEVE retornar o índice original do item do guarda-roupa.
 
 Retorne a sugestão de look como um array de itens com o índice, tipo e uma breve descrição do item no look.
-
-Finalmente, se solicitado, crie uma visualização do look em um manequim {{{mannequinPreference}}}. Retorne o URI de dados da foto do manequim vestindo o look no campo mannequinPhotoDataUri. Se não puder criar a visualização do manequim, deixe o campo vazio.
 
 Produza um objeto JSON que siga o esquema de saída.
 `,
@@ -158,8 +156,11 @@ const generateOutfitFlow = ai.defineFlow(
     });
 
     if (!output) {
-      throw new Error('No output from prompt');
+      throw new Error('Não foi possível obter uma sugestão de look.');
     }
+
+    let result: GenerateOutfitOutput = { ...output, mannequinPhotoDataUri: undefined };
+
 
     // Step 2: Optionally generate the mannequin visualization
     if (input.mannequinPreference && output.outfitSuggestion.length > 0) {
@@ -174,7 +175,7 @@ const generateOutfitFlow = ai.defineFlow(
         });
 
         if (media?.url) {
-          output.mannequinPhotoDataUri = media.url;
+          result.mannequinPhotoDataUri = media.url;
         }
       } catch (error) {
         console.error('Error generating mannequin image:', error);
@@ -182,6 +183,6 @@ const generateOutfitFlow = ai.defineFlow(
       }
     }
 
-    return output;
+    return result;
   }
 );
