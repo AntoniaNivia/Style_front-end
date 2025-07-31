@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,21 +12,22 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const ClothingItemSchema = z.object({
+  photoDataUri: z
+    .string()
+    .describe(
+      "Uma foto da peça de roupa, como um URI de dados que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<dados_codificados>'."
+    ),
+  type: z.string().describe('O tipo de peça de roupa (ex: camisa, calça, vestido).'),
+  color: z.string().describe('A cor da peça de roupa.'),
+  season: z.string().describe('A estação para a qual a peça de roupa é adequada.'),
+  occasion: z.string().describe('A ocasião para a qual a peça de roupa é adequada.'),
+  tags: z.array(z.string()).describe('Etiquetas personalizadas para a peça de roupa.'),
+});
+
+
 const GenerateOutfitInputSchema = z.object({
-  wardrobe: z.array(
-    z.object({
-      photoDataUri: z
-        .string()
-        .describe(
-          "Uma foto da peça de roupa, como um URI de dados que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<dados_codificados>'."
-        ),
-      type: z.string().describe('O tipo de peça de roupa (ex: camisa, calça, vestido).'),
-      color: z.string().describe('A cor da peça de roupa.'),
-      season: z.string().describe('A estação para a qual a peça de roupa é adequada.'),
-      occasion: z.string().describe('A ocasião para a qual a peça de roupa é adequada.'),
-      tags: z.array(z.string()).describe('Etiquetas personalizadas para a peça de roupa.'),
-    })
-  ).describe('O guarda-roupa virtual do usuário.'),
+  wardrobe: z.array(ClothingItemSchema).describe('O guarda-roupa virtual do usuário.'),
   userStyle: z.string().describe('O estilo preferido do usuário (ex: casual, elegante, urbano).'),
   climate: z.string().describe('O clima atual (ex: quente, frio, chuvoso).'),
   occasion: z.string().describe('A ocasião para a qual o look é destinado (ex: festa, trabalho, casual).'),
@@ -33,18 +35,15 @@ const GenerateOutfitInputSchema = z.object({
 });
 export type GenerateOutfitInput = z.infer<typeof GenerateOutfitInputSchema>;
 
+
 const GenerateOutfitOutputSchema = z.object({
   outfitSuggestion: z.array(
     z.object({
-      photoDataUri: z
-        .string()
-        .describe(
-          "Uma foto da peça de roupa, como um URI de dados que deve incluir um tipo MIME e usar codificação Base64. Formato esperado: 'data:<mimetype>;base64,<dados_codificados>'."
-        ),
+      index: z.number().describe('O índice da peça de roupa do guarda-roupa original.'),
       type: z.string().describe('O tipo de peça de roupa (ex: camisa, calça, vestido).'),
       description: z.string().describe('Uma descrição do item do look.'),
     })
-  ).describe('A sugestão de look gerada pela IA.'),
+  ).describe('A sugestão de look gerada pela IA, referenciando itens pelo índice.'),
   reasoning: z.string().describe('Explicação de por que a IA fez esta sugestão.'),
   mannequinPhotoDataUri: z
     .string()
@@ -55,24 +54,52 @@ const GenerateOutfitOutputSchema = z.object({
 });
 export type GenerateOutfitOutput = z.infer<typeof GenerateOutfitOutputSchema>;
 
-export async function generateOutfit(input: GenerateOutfitInput): Promise<GenerateOutfitOutput> {
-  return generateOutfitFlow(input);
+// This is the type that will be returned to the client, with full image data
+export type EnrichedGenerateOutfitOutput = {
+    outfitSuggestion: {
+        photoDataUri: string;
+        type: string;
+        description: string;
+    }[];
+    reasoning: string;
+    mannequinPhotoDataUri?: string;
+};
+
+
+export async function generateOutfit(input: GenerateOutfitInput): Promise<EnrichedGenerateOutfitOutput> {
+  const result = await generateOutfitFlow(input);
+  
+  // Re-hydrate the output with the full photoDataUri from the original input
+  const enrichedOutfitSuggestion = result.outfitSuggestion.map(item => {
+    const originalItem = input.wardrobe[item.index];
+    return {
+      ...item,
+      photoDataUri: originalItem.photoDataUri,
+    };
+  });
+
+  return {
+    ...result,
+    outfitSuggestion: enrichedOutfitSuggestion,
+  };
 }
 
 const prompt = ai.definePrompt({
   name: 'generateOutfitPrompt',
-  input: {schema: GenerateOutfitInputSchema},
+  input: {schema: z.object({
+      // We only send the text metadata to the prompt, not the heavy image data
+      wardrobe: z.array(ClothingItemSchema.omit({ photoDataUri: true })).describe('O guarda-roupa virtual do usuário.'),
+      userStyle: z.string(),
+      climate: z.string(),
+      occasion: z.string(),
+      mannequinPreference: z.enum(['Woman', 'Man', 'Neutral']),
+  })},
   output: {schema: GenerateOutfitOutputSchema},
   prompt: `Você é um estilista de IA. Dado o guarda-roupa de um usuário, suas preferências de estilo, o clima atual e a ocasião, você sugerirá um look.
 
-Guarda-roupa:
+Guarda-roupa (cada item tem um índice implícito baseado em sua posição no array, começando em 0):
 {{#each wardrobe}}
-- Tipo: {{this.type}}, Cor: {{this.color}}, Estação: {{this.season}}, Ocasião: {{this.occasion}}, Etiquetas: {{this.tags}}. O photoDataUri para esta peça é {{{this.photoDataUri}}}.
-  {{#if @last}}
-
-  {{else}}
-  
-  {{/if}}
+- (Índice: {{@index}}) Tipo: {{this.type}}, Cor: {{this.color}}, Estação: {{this.season}}, Ocasião: {{this.occasion}}, Etiquetas: {{this.tags}}.
 {{/each}}
 
 Estilo do usuário: {{{userStyle}}}
@@ -80,13 +107,13 @@ Clima: {{{climate}}}
 Ocasião: {{{occasion}}}
 
 Você deve escolher itens do guarda-roupa para criar um look completo que seja apropriado para o estilo do usuário, o clima e a ocasião. Forneça uma justificativa para cada item escolhido. 
-Para cada item no look sugerido, você DEVE retornar o photoDataUri original do item do guarda-roupa.
+Para cada item no look sugerido, você DEVE retornar o índice original do item do guarda-roupa.
 
-Retorne a sugestão de look como um array de itens com photoDataUri, tipo e descrição.
+Retorne a sugestão de look como um array de itens com o índice, tipo e uma breve descrição do item no look.
 
-Finalmente, crie uma visualização do look em um manequim {{{mannequinPreference}}}. Retorne o URI de dados da foto do manequim vestindo o look no campo mannequinPhotoDataUri. Se não puder criar a visualização do manequim, deixe o campo vazio.
+Finalmente, se solicitado, crie uma visualização do look em um manequim {{{mannequinPreference}}}. Retorne o URI de dados da foto do manequim vestindo o look no campo mannequinPhotoDataUri. Se não puder criar a visualização do manequim, deixe o campo vazio.
 
-Produza um objeto JSON que siga o esquema.
+Produza um objeto JSON que siga o esquema de saída.
 `,
   config: {
     safetySettings: [
@@ -118,14 +145,24 @@ const generateOutfitFlow = ai.defineFlow(
   },
   async input => {
     // Step 1: Call the prompt to get the outfit suggestion and reasoning
-    const {output} = await prompt(input);
+    const {output} = await prompt({
+        ...input,
+        // Remove photoDataUri before sending to the prompt
+        wardrobe: input.wardrobe.map(item => ({
+            type: item.type,
+            color: item.color,
+            season: item.season,
+            occasion: item.occasion,
+            tags: item.tags,
+        }))
+    });
 
     if (!output) {
       throw new Error('No output from prompt');
     }
 
     // Step 2: Optionally generate the mannequin visualization
-    if (input.mannequinPreference) {
+    if (input.mannequinPreference && output.outfitSuggestion.length > 0) {
       try {
         const mannequinPrompt = `Gere uma foto de um manequim ${input.mannequinPreference} vestindo o seguinte look: ${output.outfitSuggestion.map(item => item.type).join(', ')}. O estilo geral é ${input.userStyle}, para uma ocasião de ${input.occasion}. O fundo deve ser simples e neutro.`;
         const {media} = await ai.generate({

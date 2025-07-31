@@ -1,6 +1,7 @@
+
 'use client';
 
-import { generateOutfit, type GenerateOutfitOutput, type GenerateOutfitInput } from "@/ai/flows/generate-outfit";
+import { generateOutfit, type EnrichedGenerateOutfitOutput, type GenerateOutfitInput } from "@/ai/flows/generate-outfit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ type FormValues = {
 
 export default function BuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [outfit, setOutfit] = useState<GenerateOutfitOutput | null>(null);
+  const [outfit, setOutfit] = useState<EnrichedGenerateOutfitOutput | null>(null);
   const { toast } = useToast();
   const { wardrobe } = useWardrobe(); // Use the shared wardrobe state
 
