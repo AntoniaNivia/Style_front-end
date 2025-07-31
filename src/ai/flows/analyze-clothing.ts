@@ -12,7 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const AnalyzeClothingInputSchema = z.object({
+const AnalyzeClothingInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
@@ -21,7 +21,7 @@ export const AnalyzeClothingInputSchema = z.object({
 });
 export type AnalyzeClothingInput = z.infer<typeof AnalyzeClothingInputSchema>;
 
-export const AnalyzeClothingOutputSchema = z.object({
+const AnalyzeClothingOutputSchema = z.object({
   type: z.string().describe('O tipo de peça de roupa (ex: Camiseta, Calça, Vestido).'),
   color: z.string().describe('A cor principal da peça de roupa.'),
   season: z.string().describe('A estação mais adequada para a peça de roupa (ex: Verão, Inverno).'),
