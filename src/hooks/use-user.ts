@@ -1,4 +1,6 @@
 
+'use client';
+
 import type { User } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
