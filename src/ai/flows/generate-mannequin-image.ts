@@ -12,7 +12,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const GenerateMannequinImageInputSchema = z.object({
+const GenerateMannequinImageInputSchema = z.object({
   outfitDescription: z.string().describe('Uma descrição textual do look para vestir o manequim (ex: "camisa branca, calça azul").'),
   userStyle: z.string().describe('O estilo geral do usuário para guiar a IA (ex: "moderno", "casual").'),
   occasion: z.string().describe('A ocasião do look (ex: "festa", "trabalho").'),
@@ -20,7 +20,7 @@ export const GenerateMannequinImageInputSchema = z.object({
 });
 export type GenerateMannequinImageInput = z.infer<typeof GenerateMannequinImageInputSchema>;
 
-export const GenerateMannequinImageOutputSchema = z.object({
+const GenerateMannequinImageOutputSchema = z.object({
   mannequinPhotoDataUri: z
     .string()
     .describe(
