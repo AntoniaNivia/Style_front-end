@@ -1,3 +1,6 @@
+
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/hooks/use-user";
@@ -11,7 +14,7 @@ export default function DashboardPage() {
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Bem-vindo(a) de volta, {user?.name.split(' ')[0]}!</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Bem-vindo(a) de volta, {user ? user.name.split(' ')[0] : ''}!</h1>
                 <p className="text-muted-foreground">Aqui está seu resumo de estilo para hoje.</p>
             </div>
 
