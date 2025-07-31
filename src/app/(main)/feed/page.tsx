@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Heart, Save } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const feedItems = [
   { id: 1, user: 'Lila Boutique', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x500', hint: 'woman fashion' },
