@@ -9,20 +9,22 @@ import { useUser } from "@/hooks/use-user";
 import { BarChart, Heart, Image as ImageIcon, Send } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 
 export default function PostPage() {
     const { user } = useUser();
     const router = useRouter();
     const { toast } = useToast();
+    const [isMounted, setIsMounted] = useState(false);
 
     // In a real app, this would be handled by middleware or server-side checks.
     useEffect(() => {
-        if (user?.type !== 'store') {
+        setIsMounted(true);
+        if (isMounted && user?.type !== 'store') {
             router.replace('/dashboard');
         }
-    }, [user, router]);
+    }, [user, router, isMounted]);
 
     const handlePost = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,8 +35,8 @@ export default function PostPage() {
         router.push('/feed');
     }
 
-    if (user?.type !== 'store') {
-        return <div className="flex h-full w-full items-center justify-center"><p>Redirecionando...</p></div>;
+    if (!isMounted || user?.type !== 'store') {
+        return <div className="flex h-full w-full items-center justify-center"><p>Carregando...</p></div>;
     }
 
     return (
