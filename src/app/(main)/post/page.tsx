@@ -30,6 +30,7 @@ export default function PostPage() {
             title: "Postagem Criada!",
             description: "Sua nova postagem já está visível no Feed de Inspiração.",
         })
+        router.push('/feed');
     }
 
     if (user?.type !== 'store') {
