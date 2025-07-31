@@ -1,5 +1,5 @@
+
 'use client';
-import { analyzeClothingItem, type AnalyzeClothingOutput } from "@/ai/flows/analyze-clothing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,15 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useWardrobe, type ClothingItemWithoutId } from "@/hooks/use-wardrobe";
+import { useWardrobe, type ClothingItem } from "@/hooks/use-wardrobe";
+import type { AnalyzeClothingOutput } from '@/lib/types';
 import { Loader2, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import Image from "next/image";
 import * as React from 'react';
-import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
-type AddItemFormValues = Omit<ClothingItemWithoutId, 'photoDataUri'> & {
+type AddItemFormValues = Omit<ClothingItem, 'id' | 'userId' | 'photoUrl' | 'photoDataUri'> & {
     photo: FileList;
 };
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
     const { addClothingItem } = useWardrobe();
@@ -49,13 +52,23 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
         }
         setIsAnalyzing(true);
         try {
-            const result = await analyzeClothingItem({ photoDataUri: previewImage });
+            // This is a placeholder for calling the backend
+            const response = await fetch(`${API_URL}/wardrobe/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoDataUri: previewImage })
+            });
+
+            if (!response.ok) throw new Error("Analysis failed");
+
+            const result: AnalyzeClothingOutput = await response.json();
+            
             setValue('type', result.type);
             setValue('color', result.color);
             setValue('season', result.season);
             setValue('occasion', result.occasion);
-            setValue('tags', result.tags as any); // RHF expects a string here
-            clearErrors(); // Clear errors after auto-filling
+            setValue('tags', result.tags);
+            clearErrors();
             toast({
                 title: "Análise Concluída",
                 description: "Os detalhes da sua peça de roupa foram preenchidos.",
@@ -74,32 +87,43 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
 
 
     const onSubmit: SubmitHandler<AddItemFormValues> = async (data) => {
-        try {
-            if (!previewImage) {
-                 toast({
-                    title: "Erro",
-                    description: "Nenhuma imagem fornecida.",
-                    variant: "destructive",
-                });
-                return;
-            }
+        if (!previewImage) {
+             toast({
+                title: "Erro",
+                description: "Nenhuma imagem fornecida.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-            const newItem: ClothingItemWithoutId = {
-                photoDataUri: previewImage,
-                type: data.type,
-                color: data.color,
-                season: data.season,
-                occasion: data.occasion,
-                tags: data.tags.length > 0 ? (data.tags as unknown as string).split(',').map(tag => tag.trim()) : [],
-            };
-            addClothingItem(newItem);
+        const payload = {
+            ...data,
+            photoDataUri: previewImage,
+            tags: Array.isArray(data.tags) ? data.tags : (data.tags as unknown as string).split(',').map(tag => tag.trim()),
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/wardrobe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Authorization': `Bearer ${your_jwt_token}`
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) throw new Error('Failed to add item');
+            
+            const newClothingItem = await response.json();
+            addClothingItem(newClothingItem);
+
             toast({
                 title: "Item Adicionado!",
                 description: "Sua nova peça foi adicionada ao guarda-roupa.",
             });
             reset();
             setPreviewImage(null);
-            onOpenChange(false); // Close dialog on success
+            onOpenChange(false);
         } catch (error) {
             console.error("Error adding item:", error);
             toast({
@@ -205,8 +229,32 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
 }
 
 export default function WardrobePage() {
-    const { wardrobe } = useWardrobe();
+    const { wardrobe, setWardrobe } = useWardrobe();
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchWardrobe = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/wardrobe`, {
+                    headers: {
+                        // 'Authorization': `Bearer ${your_jwt_token}`
+                    }
+                });
+                if (!response.ok) throw new Error("Failed to fetch wardrobe");
+                const data = await response.json();
+                setWardrobe(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchWardrobe();
+    }, [setWardrobe]);
+
 
     return (
         <div className="flex flex-col gap-6">
@@ -221,28 +269,34 @@ export default function WardrobePage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {wardrobe.map((item, index) => (
-                    <Card key={index} className="overflow-hidden group">
-                        <CardContent className="p-0">
-                            <Image
-                                src={item.photoDataUri}
-                                alt={`${item.color} ${item.type}`}
-                                width={300}
-                                height={400}
-                                className="object-cover w-full h-auto aspect-[3/4] transition-transform duration-300 group-hover:scale-105"
-                                data-ai-hint={`${item.type} ${item.color}`}
-                            />
-                        </CardContent>
-                        <CardFooter className="p-3 flex justify-between items-center bg-background/80 backdrop-blur-sm">
-                            <div>
-                                <p className="font-semibold text-sm">{item.type}</p>
-                                <p className="text-xs text-muted-foreground">{item.color}</p>
-                            </div>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
+            {isLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {Array.from({ length: 5 }).map((_, i) => <Card key={i} className="h-[400px] animate-pulse bg-muted" />)}
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {wardrobe.map((item) => (
+                        <Card key={item.id} className="overflow-hidden group">
+                            <CardContent className="p-0">
+                                <Image
+                                    src={item.photoUrl} // Use photoUrl from backend
+                                    alt={`${item.color} ${item.type}`}
+                                    width={300}
+                                    height={400}
+                                    className="object-cover w-full h-auto aspect-[3/4] transition-transform duration-300 group-hover:scale-105"
+                                    data-ai-hint={`${item.type} ${item.color}`}
+                                />
+                            </CardContent>
+                            <CardFooter className="p-3 flex justify-between items-center bg-background/80 backdrop-blur-sm">
+                                <div>
+                                    <p className="font-semibold text-sm">{item.type}</p>
+                                    <p className="text-xs text-muted-foreground">{item.color}</p>
+                                </div>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

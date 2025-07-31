@@ -1,7 +1,6 @@
 
 'use client';
 
-import { generateOutfit, type EnrichedGenerateOutfitOutput, type GenerateOutfitInput } from "@/ai/flows/generate-outfit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useWardrobe } from "@/hooks/use-wardrobe";
+import type { GenerateOutfitInput, EnrichedGenerateOutfitOutput } from '@/lib/types'; // Using types from a central place
 import { Bot, Loader2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from 'react-hook-form';
-
 
 type FormValues = {
   climate: string;
@@ -22,11 +21,13 @@ type FormValues = {
   mannequinPreference: 'Woman' | 'Man' | 'Neutral';
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function BuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [outfit, setOutfit] = useState<EnrichedGenerateOutfitOutput | null>(null);
   const { toast } = useToast();
-  const { wardrobe } = useWardrobe(); // Use the shared wardrobe state
+  const { wardrobe } = useWardrobe();
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
@@ -40,22 +41,39 @@ export default function BuilderPage() {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsLoading(true);
     setOutfit(null);
-    try {
-        if (wardrobe.length === 0) {
-            toast({
-                title: "Guarda-roupa Vazio",
-                description: "Adicione itens ao seu guarda-roupa primeiro!",
-                variant: "destructive",
-            });
-            return;
-        }
 
-        const input: GenerateOutfitInput = {
-            wardrobe: wardrobe, // Pass the current wardrobe to the AI
-            ...data
-        }
-      const result = await generateOutfit(input);
+    if (wardrobe.length === 0) {
+        toast({
+            title: "Guarda-roupa Vazio",
+            description: "Adicione itens ao seu guarda-roupa primeiro!",
+            variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+    }
+
+    const input: GenerateOutfitInput = {
+        wardrobe: wardrobe,
+        ...data
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/builder/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${your_jwt_token}` // Add JWT token here
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao gerar o look');
+      }
+
+      const result = await response.json();
       setOutfit(result);
+
     } catch (error) {
       console.error(error);
       toast({

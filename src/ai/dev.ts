@@ -1,6 +1,1 @@
-import { config } from 'dotenv';
-config();
-
-import '@/ai/flows/generate-outfit.ts';
-import '@/ai/flows/analyze-clothing.ts';
-import '@/ai/flows/generate-mannequin-image.ts';
+// This file is no longer needed in the frontend as AI flows are moving to the backend.
