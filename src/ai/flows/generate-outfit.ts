@@ -27,7 +27,7 @@ const ClothingItemSchema = z.object({
 });
 
 
-export const GenerateOutfitInputSchema = z.object({
+const GenerateOutfitInputSchema = z.object({
   wardrobe: z.array(ClothingItemSchema).describe('O guarda-roupa virtual do usuário.'),
   userStyle: z.string().describe('O estilo preferido do usuário (ex: casual, elegante, urbano).'),
   climate: z.string().describe('O clima atual (ex: quente, frio, chuvoso).'),
