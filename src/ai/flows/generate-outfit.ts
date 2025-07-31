@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { generateMannequinImage } from './generate-mannequin-image';
 
 const ClothingItemSchema = z.object({
   photoDataUri: z
@@ -26,7 +27,7 @@ const ClothingItemSchema = z.object({
 });
 
 
-const GenerateOutfitInputSchema = z.object({
+export const GenerateOutfitInputSchema = z.object({
   wardrobe: z.array(ClothingItemSchema).describe('O guarda-roupa virtual do usuário.'),
   userStyle: z.string().describe('O estilo preferido do usuário (ex: casual, elegante, urbano).'),
   climate: z.string().describe('O clima atual (ex: quente, frio, chuvoso).'),
@@ -67,10 +68,24 @@ export type EnrichedGenerateOutfitOutput = {
 
 
 export async function generateOutfit(input: GenerateOutfitInput): Promise<EnrichedGenerateOutfitOutput> {
-  const result = await generateOutfitFlow(input);
+  // Step 1: Get the textual outfit suggestion
+  const textResult = await generateOutfitTextFlow(input);
+
+  if (!textResult || textResult.outfitSuggestion.length === 0) {
+    throw new Error("Não foi possível gerar uma sugestão de look.");
+  }
   
-  // Re-hydrate the output with the full photoDataUri from the original input
-  const enrichedOutfitSuggestion = result.outfitSuggestion.map(item => {
+  // Step 2: Generate the mannequin image in a separate, dedicated flow
+  const outfitDescription = textResult.outfitSuggestion.map(item => item.type).join(', ');
+  const mannequinImageResult = await generateMannequinImage({
+    outfitDescription,
+    userStyle: input.userStyle,
+    occasion: input.occasion,
+    mannequinPreference: input.mannequinPreference,
+  });
+
+  // Step 3: Re-hydrate the output with the full photoDataUri from the original input
+  const enrichedOutfitSuggestion = textResult.outfitSuggestion.map(item => {
     const originalItem = input.wardrobe[item.index];
     return {
       ...item,
@@ -79,20 +94,19 @@ export async function generateOutfit(input: GenerateOutfitInput): Promise<Enrich
   });
 
   return {
-    ...result,
+    ...textResult,
     outfitSuggestion: enrichedOutfitSuggestion,
+    mannequinPhotoDataUri: mannequinImageResult.mannequinPhotoDataUri,
   };
 }
 
 const prompt = ai.definePrompt({
   name: 'generateOutfitPrompt',
   input: {schema: z.object({
-      // We only send the text metadata to the prompt, not the heavy image data
       wardrobe: z.array(ClothingItemSchema.omit({ photoDataUri: true })).describe('O guarda-roupa virtual do usuário.'),
       userStyle: z.string(),
       climate: z.string(),
       occasion: z.string(),
-      mannequinPreference: z.enum(['Woman', 'Man', 'Neutral']),
   })},
   output: {schema: GenerateOutfitOutputSchema.omit({mannequinPhotoDataUri: true})},
   prompt: `Você é um estilista de IA. Dado o guarda-roupa de um usuário, suas preferências de estilo, o clima atual e a ocasião, você sugerirá um look.
@@ -115,37 +129,23 @@ Produza um objeto JSON que siga o esquema de saída.
 `,
   config: {
     safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-      {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_NONE',
-      },
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-      {
-        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-        threshold: 'BLOCK_LOW_AND_ABOVE',
-      },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
 });
 
-const generateOutfitFlow = ai.defineFlow(
+const generateOutfitTextFlow = ai.defineFlow(
   {
-    name: 'generateOutfitFlow',
+    name: 'generateOutfitTextFlow',
     inputSchema: GenerateOutfitInputSchema,
-    outputSchema: GenerateOutfitOutputSchema,
+    outputSchema: GenerateOutfitOutputSchema.omit({ mannequinPhotoDataUri: true }),
   },
   async input => {
-    // Step 1: Call the prompt to get the outfit suggestion and reasoning
     const {output} = await prompt({
         ...input,
-        // Remove photoDataUri before sending to the prompt
         wardrobe: input.wardrobe.map(item => ({
             type: item.type,
             color: item.color,
@@ -159,30 +159,6 @@ const generateOutfitFlow = ai.defineFlow(
       throw new Error('Não foi possível obter uma sugestão de look.');
     }
 
-    let result: GenerateOutfitOutput = { ...output, mannequinPhotoDataUri: undefined };
-
-
-    // Step 2: Optionally generate the mannequin visualization
-    if (input.mannequinPreference && output.outfitSuggestion.length > 0) {
-      try {
-        const mannequinPrompt = `Gere uma foto de um manequim ${input.mannequinPreference} vestindo o seguinte look: ${output.outfitSuggestion.map(item => item.type).join(', ')}. O estilo geral é ${input.userStyle}, para uma ocasião de ${input.occasion}. O fundo deve ser simples e neutro.`;
-        const {media} = await ai.generate({
-          model: 'googleai/gemini-2.0-flash-preview-image-generation',
-          prompt: mannequinPrompt,
-          config: {
-            responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
-          },
-        });
-
-        if (media?.url) {
-          result.mannequinPhotoDataUri = media.url;
-        }
-      } catch (error) {
-        console.error('Error generating mannequin image:', error);
-        // If mannequin generation fails, don't block the entire flow, and return without the mannequin image
-      }
-    }
-
-    return result;
+    return output;
   }
 );
