@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import { AuthProvider } from "@/hooks/use-auth";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,6 +14,11 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "StyleWise",
   description: "Sistema de estilo virtual com IA, para lojas e indivíduos.",
+  icons: {
+    icon: '/stylewise-logo.png',
+    shortcut: '/stylewise-logo.png',
+    apple: '/stylewise-logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -23,8 +29,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={cn("font-sans antialiased", poppins.variable)}>
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleWise - Testador de APIs</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-online { color: #10b981; }
+        .status-offline { color: #ef4444; }
+        .status-warning { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-tshirt text-2xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">StyleWise API Tester</h1>
+                        <p class="text-sm opacity-90">Ferramenta de Teste para APIs do Sistema</p>
+                    </div>
+                </div>
+                <div id="statusConnection" class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <span class="text-sm">Verificando conexão...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Auth Status -->
+        <div id="authStatus" class="bg-white rounded-lg shadow-md p-6 mb-6 card-hover">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-user-shield mr-2 text-blue-600"></i>
+                Status de Autenticação
+            </h2>
+            <div id="authInfo" class="text-gray-600">
+                <div class="loading mr-2"></div> Verificando token de autenticação...
+            </div>
+        </div>
+
+        <!-- API Tests Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Wardrobe Test -->
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-closet mr-2 text-purple-600"></i>
+                        Guarda-roupa
+                    </h3>
+                    <div id="wardrobeStatus" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">Testa a API do guarda-roupa pessoal</p>
+                <button onclick="testarGuardaroupa()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-play mr-2"></i>
+                    Testar Guarda-roupa
+                </button>
+            </div>
+
+            <!-- Builder IA Test -->
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-robot mr-2 text-green-600"></i>
+                        Construtor IA
+                    </h3>
+                    <div id="builderStatus" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">Testa a geração automática de looks</p>
+                <button onclick="mostrarFormularioBuilder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-magic mr-2"></i>
+                    Configurar & Testar
+                </button>
+            </div>
+
+            <!-- Manual Outfits Test -->
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-hand-paper mr-2 text-orange-600"></i>
+                        Looks Manuais
+                    </h3>
+                    <div id="manualOutfitsStatus" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">Testa o sistema de looks criados manualmente</p>
+                <button onclick="testarLooksManuais()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-list mr-2"></i>
+                    Testar Looks Manuais
+                </button>
+            </div>
+        </div>
+
+        <!-- Builder Form Modal -->
+        <div id="builderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Configurar Geração de Look</h3>
+                    <button onclick="fecharFormularioBuilder()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="builderForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clima</label>
+                        <select id="weather" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Ensolarado">☀️ Ensolarado</option>
+                            <option value="Nublado">☁️ Nublado</option>
+                            <option value="Chuvoso">🌧️ Chuvoso</option>
+                            <option value="Frio">❄️ Frio</option>
+                            <option value="Quente">🔥 Quente</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ocasião</label>
+                        <select id="occasion" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Trabalho">💼 Trabalho</option>
+                            <option value="Casual">👕 Casual</option>
+                            <option value="Festa">🎉 Festa</option>
+                            <option value="Esporte">⚽ Esporte</option>
+                            <option value="Encontro">💕 Encontro</option>
+                            <option value="Reunião">📊 Reunião</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estilo</label>
+                        <select id="style" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Elegante">✨ Elegante</option>
+                            <option value="Casual">👖 Casual</option>
+                            <option value="Moderno">🔥 Moderno</option>
+                            <option value="Clássico">🎩 Clássico</option>
+                            <option value="Descontraído">😎 Descontraído</option>
+                            <option value="Romântico">💖 Romântico</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Manequim</label>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="mannequin" value="Woman" checked class="mr-2">
+                                <span>👩 Mulher</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="mannequin" value="Man" class="mr-2">
+                                <span>👨 Homem</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="testarBuilder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-robot mr-2"></i>
+                        Gerar Look com IA
+                    </button>
+                    
+                    <button type="button" onclick="testarSalvarLookManual()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 mt-2">
+                        <i class="fas fa-save mr-2"></i>
+                        Testar Salvar Look Manual
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultadoContainer" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold">Resultados dos Testes</h2>
+                    <button onclick="limparResultados()" class="text-red-600 hover:text-red-700">
+                        <i class="fas fa-trash mr-1"></i>
+                        Limpar
+                    </button>
+                </div>
+                <div id="resultado" class="space-y-4"></div>
+            </div>
+        </div>
+    </main>
+    <script>
+        // Estado global da aplicação
+        let appState = {
+            isAuthenticated: false,
+            token: null,
+            userInfo: null,
+            apiStatus: {
+                wardrobe: 'unknown',
+                builder: 'unknown',
+                manualOutfits: 'unknown'
+            }
+        };
+
+        // Inicialização da página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 StyleWise API Tester inicializado');
+            verificarAutenticacao();
+            verificarStatusAPIs();
+        });
+
+        // Utilitários
+        async function obterCookie(nome) {
+            const valor = `; ${document.cookie}`;
+            const partes = valor.split(`; ${nome}=`);
+            if (partes.length === 2) return partes.pop().split(';').shift();
+            return null;
+        }
+
+        function mostrarLoading(elementId) {
+            const elemento = document.getElementById(elementId);
+            if (elemento) {
+                elemento.innerHTML = '<div class="loading mr-2"></div> Carregando...';
+            }
+        }
+
+        function adicionarResultado(titulo, conteudo, tipo = 'info') {
+            const container = document.getElementById('resultado');
+            const containerPrincipal = document.getElementById('resultadoContainer');
+            
+            containerPrincipal.classList.remove('hidden');
+            
+            const cores = {
+                success: 'border-green-200 bg-green-50 text-green-800',
+                error: 'border-red-200 bg-red-50 text-red-800',
+                warning: 'border-yellow-200 bg-yellow-50 text-yellow-800',
+                info: 'border-blue-200 bg-blue-50 text-blue-800'
+            };
+            
+            const icones = {
+                success: 'fas fa-check-circle text-green-600',
+                error: 'fas fa-exclamation-circle text-red-600',
+                warning: 'fas fa-exclamation-triangle text-yellow-600',
+                info: 'fas fa-info-circle text-blue-600'
+            };
+            
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            
+            const resultadoDiv = document.createElement('div');
+            resultadoDiv.className = `border rounded-lg p-4 ${cores[tipo]}`;
+            resultadoDiv.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <i class="${icones[tipo]}"></i>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-semibold">${titulo}</h3>
+                            <span class="text-xs opacity-75">${timestamp}</span>
+                        </div>
+                        <div class="text-sm font-mono bg-white bg-opacity-50 rounded p-3 overflow-x-auto">
+                            ${typeof conteudo === 'object' ? 
+                                `<pre>${JSON.stringify(conteudo, null, 2)}</pre>` : 
+                                conteudo
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertBefore(resultadoDiv, container.firstChild);
+        }
+
+        function atualizarStatusIndicador(elementId, status) {
+            const elemento = document.getElementById(elementId);
+            if (!elemento) return;
+            
+            elemento.className = `w-3 h-3 rounded-full ${
+                status === 'online' ? 'bg-green-400' :
+                status === 'offline' ? 'bg-red-400' :
+                status === 'warning' ? 'bg-yellow-400' : 'bg-gray-400'
+            }`;
+        }
+
+        // Verificação de autenticação
+        async function verificarAutenticacao() {
+            try {
+                const token = await obterCookie('auth_token');
+                const authInfo = document.getElementById('authInfo');
+                
+                if (token) {
+                    appState.isAuthenticated = true;
+                    appState.token = token;
+                    
+                    authInfo.innerHTML = `
+                        <div class="flex items-center space-x-2 text-green-700">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <p class="font-medium">✅ Autenticado com sucesso</p>
+                                <p class="text-xs text-gray-600">Token: ${token.substring(0, 20)}...</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    authInfo.innerHTML = `
+                        <div class="flex items-center space-x-2 text-red-700">
+                            <i class="fas fa-times-circle"></i>
+                            <div>
+                                <p class="font-medium">❌ Token não encontrado</p>
+                                <p class="text-xs text-gray-600">Faça login no sistema principal primeiro</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (erro) {
+                console.error('Erro ao verificar autenticação:', erro);
+                document.getElementById('authInfo').innerHTML = `
+                    <div class="text-red-700">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Erro ao verificar autenticação: ${erro.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Verificação de status das APIs
+        async function verificarStatusAPIs() {
+            const endpoints = [
+                { name: 'wardrobe', url: '/api/wardrobe', status: 'wardrobeStatus' },
+                { name: 'builder', url: '/api/builder/generate', status: 'builderStatus' },
+                { name: 'manualOutfits', url: '/api/manual-outfits', status: 'manualOutfitsStatus' }
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: endpoint.name === 'builder' ? 'POST' : 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(appState.token && { 'Authorization': `Bearer ${appState.token}` })
+                        },
+                        ...(endpoint.name === 'builder' && {
+                            body: JSON.stringify({
+                                weather: "Ensolarado",
+                                occasion: "Casual", 
+                                style: "Moderno",
+                                mannequinPreference: "Woman"
+                            })
+                        })
+                    });
+                    
+                    const status = response.ok ? 'online' : 'warning';
+                    atualizarStatusIndicador(endpoint.status, status);
+                    appState.apiStatus[endpoint.name] = status;
+                } catch (erro) {
+                    atualizarStatusIndicador(endpoint.status, 'offline');
+                    appState.apiStatus[endpoint.name] = 'offline';
+                }
+            }
+            
+            // Atualizar status geral da conexão
+            const statusGeral = Object.values(appState.apiStatus).every(s => s === 'online') ? 'online' :
+                              Object.values(appState.apiStatus).some(s => s === 'online') ? 'warning' : 'offline';
+            
+            const statusConnection = document.getElementById('statusConnection');
+            statusConnection.innerHTML = `
+                <div class="w-3 h-3 rounded-full ${
+                    statusGeral === 'online' ? 'bg-green-400' :
+                    statusGeral === 'warning' ? 'bg-yellow-400' : 'bg-red-400'
+                }"></div>
+                <span class="text-sm">
+                    ${statusGeral === 'online' ? 'Todas APIs Online' :
+                      statusGeral === 'warning' ? 'Algumas APIs Offline' : 'APIs Indisponíveis'}
+                </span>
+            `;
+        }
+
+        // Testes das APIs
+        async function testarGuardaroupa() {
+            mostrarLoading('wardrobeStatus');
+            
+            try {
+                const response = await fetch('/api/wardrobe', {
+                    headers: appState.token ? {
+                        'Authorization': `Bearer ${appState.token}`
+                    } : {}
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    atualizarStatusIndicador('wardrobeStatus', 'online');
+                    adicionarResultado(
+                        '👔 Teste do Guarda-roupa - SUCESSO', 
+                        {
+                            status: response.status,
+                            message: 'API do guarda-roupa funcionando corretamente',
+                            totalItens: data.items?.length || 0,
+                            dados: data
+                        },
+                        'success'
+                    );
+                } else {
+                    atualizarStatusIndicador('wardrobeStatus', 'warning');
+                    adicionarResultado(
+                        '👔 Teste do Guarda-roupa - ERRO',
+                        {
+                            status: response.status,
+                            error: data.message || 'Erro desconhecido',
+                            dados: data
+                        },
+                        'error'
+                    );
+                }
+            } catch (erro) {
+                atualizarStatusIndicador('wardrobeStatus', 'offline');
+                adicionarResultado(
+                    '👔 Teste do Guarda-roupa - FALHOU',
+                    `Erro de conexão: ${erro.message}`,
+                    'error'
+                );
+            }
+        }
+
+        async function testarLooksManuais() {
+            mostrarLoading('manualOutfitsStatus');
+            
+            try {
+                const response = await fetch('/api/manual-outfits', {
+                    headers: appState.token ? {
+                        'Authorization': `Bearer ${appState.token}`
+                    } : {}
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    atualizarStatusIndicador('manualOutfitsStatus', 'online');
+                    adicionarResultado(
+                        '👔 Teste dos Looks Manuais - SUCESSO', 
+                        {
+                            status: response.status,
+                            message: 'API de looks manuais funcionando corretamente',
+                            totalLooks: data.data?.length || 0,
+                            pagination: data.pagination || null,
+                            dados: data
+                        },
+                        'success'
+                    );
+                } else {
+                    atualizarStatusIndicador('manualOutfitsStatus', 'warning');
+                    adicionarResultado(
+                        '👔 Teste dos Looks Manuais - ERRO',
+                        {
+                            status: response.status,
+                            error: data.message || 'Erro desconhecido',
+                            dados: data
+                        },
+                        'error'
+                    );
+                }
+            } catch (erro) {
+                atualizarStatusIndicador('manualOutfitsStatus', 'offline');
+                adicionarResultado(
+                    '👔 Teste dos Looks Manuais - FALHOU',
+                    `Erro de conexão: ${erro.message}`,
+                    'error'
+                );
+            }
+        }
+
+        async function testarPerfil() {
+            mostrarLoading('profileStatus');
+            
+            try {
+                const response = await fetch('/api/profile', {
+                    headers: appState.token ? {
+                        'Authorization': `Bearer ${appState.token}`
+                    } : {}
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    atualizarStatusIndicador('profileStatus', 'online');
+                    adicionarResultado(
+                        '👤 Teste do Perfil - SUCESSO',
+                        {
+                            status: response.status,
+                            message: 'API do perfil funcionando corretamente',
+                            usuario: data.name || 'Nome não informado',
+                            dados: data
+                        },
+                        'success'
+                    );
+                } else {
+                    atualizarStatusIndicador('profileStatus', 'warning');
+                    adicionarResultado(
+                        '👤 Teste do Perfil - ERRO',
+                        {
+                            status: response.status,
+                            error: data.message || 'Erro desconhecido',
+                            dados: data
+                        },
+                        'error'
+                    );
+                }
+            } catch (erro) {
+                atualizarStatusIndicador('profileStatus', 'offline');
+                adicionarResultado(
+                    '👤 Teste do Perfil - FALHOU',
+                    `Erro de conexão: ${erro.message}`,
+                    'error'
+                );
+            }
+        }
+
+        async function testarSalvarLookManual() {
+            if (!appState.isAuthenticated) {
+                adicionarResultado(
+                    '🚫 Erro de Autenticação',
+                    'Você precisa estar autenticado para salvar looks manuais',
+                    'error'
+                );
+                return;
+            }
+
+            const lookManualTeste = {
+                name: "Look de Teste - " + new Date().toLocaleTimeString(),
+                selectedItems: ["test-item-1", "test-item-2", "test-item-3"],
+                notes: "Este é um look de teste criado automaticamente pela página de testes",
+                tags: ["teste", "automatico"],
+                isPrivate: false
+            };
+
+            adicionarResultado(
+                '💾 Iniciando Teste de Salvamento...',
+                {
+                    dados: lookManualTeste,
+                    status: 'Enviando para API...'
+                },
+                'info'
+            );
+
+            try {
+                const response = await fetch('/api/manual-outfits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(appState.token && { 'Authorization': `Bearer ${appState.token}` })
+                    },
+                    body: JSON.stringify(lookManualTeste)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    adicionarResultado(
+                        '💾 Salvamento de Look Manual - SUCESSO',
+                        {
+                            status: response.status,
+                            message: 'Look manual salvo com sucesso!',
+                            lookSalvo: data.data,
+                            parametrosEnviados: lookManualTeste
+                        },
+                        'success'
+                    );
+                } else {
+                    adicionarResultado(
+                        '💾 Salvamento de Look Manual - ERRO',
+                        {
+                            status: response.status,
+                            error: data.message || 'Erro desconhecido',
+                            parametrosEnviados: lookManualTeste,
+                            respostaCompleta: data
+                        },
+                        'error'
+                    );
+                }
+            } catch (erro) {
+                adicionarResultado(
+                    '💾 Salvamento de Look Manual - FALHOU',
+                    {
+                        erro: `Erro de conexão: ${erro.message}`,
+                        parametrosEnviados: lookManualTeste
+                    },
+                    'error'
+                );
+            }
+        }
+
+        async function testarBuilder() {
+            const form = document.getElementById('builderForm');
+            const formData = new FormData(form);
+            
+            const payload = {
+                weather: document.getElementById('weather').value,
+                occasion: document.getElementById('occasion').value,
+                style: document.getElementById('style').value,
+                mannequinPreference: document.querySelector('input[name="mannequin"]:checked').value
+            };
+            
+            mostrarLoading('builderStatus');
+            fecharFormularioBuilder();
+            
+            adicionarResultado(
+                '🤖 Iniciando Geração de Look...',
+                {
+                    parametros: payload,
+                    status: 'Processando solicitação...'
+                },
+                'info'
+            );
+            
+            try {
+                const response = await fetch('/api/builder/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(appState.token && { 'Authorization': `Bearer ${appState.token}` })
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    atualizarStatusIndicador('builderStatus', 'online');
+                    adicionarResultado(
+                        '🤖 Geração de Look - SUCESSO',
+                        {
+                            status: response.status,
+                            message: 'Look gerado com sucesso pela IA!',
+                            nomeDoLook: data.outfitName || 'Look Personalizado',
+                            parametrosUsados: payload,
+                            resultadoCompleto: data
+                        },
+                        'success'
+                    );
+                } else {
+                    atualizarStatusIndicador('builderStatus', 'warning');
+                    adicionarResultado(
+                        '🤖 Geração de Look - ERRO',
+                        {
+                            status: response.status,
+                            error: data.message || 'Erro desconhecido',
+                            parametrosEnviados: payload,
+                            respostaCompleta: data
+                        },
+                        'error'
+                    );
+                }
+            } catch (erro) {
+                atualizarStatusIndicador('builderStatus', 'offline');
+                adicionarResultado(
+                    '🤖 Geração de Look - FALHOU',
+                    {
+                        erro: `Erro de conexão: ${erro.message}`,
+                        parametrosEnviados: payload
+                    },
+                    'error'
+                );
+            }
+        }
+
+        // Controles de UI
+        function mostrarFormularioBuilder() {
+            document.getElementById('builderModal').classList.remove('hidden');
+            document.getElementById('builderModal').classList.add('flex');
+        }
+
+        function fecharFormularioBuilder() {
+            document.getElementById('builderModal').classList.add('hidden');
+            document.getElementById('builderModal').classList.remove('flex');
+        }
+
+        function limparResultados() {
+            document.getElementById('resultado').innerHTML = '';
+            document.getElementById('resultadoContainer').classList.add('hidden');
+        }
+
+        // Fechar modal clicando fora
+        document.getElementById('builderModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharFormularioBuilder();
+            }
+        });
+
+        // Tecla ESC para fechar modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                fecharFormularioBuilder();
+            }
+        });
+
+        console.log('✅ Sistema de testes carregado e pronto!');
+    </script>
+</body>
+</html>

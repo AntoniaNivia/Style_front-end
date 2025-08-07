@@ -16,7 +16,8 @@ import {
   SidebarInset,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { StyleWiseLogo } from '@/components/icons';
+import { StyleLogo } from '@/components/icons';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Avatar,
   AvatarFallback,
@@ -45,6 +46,7 @@ import {
   Sparkles,
   Heart,
   Store,
+  History,
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -55,6 +57,8 @@ const navItems = [
   { href: '/dashboard', label: 'Painel', icon: LayoutGrid },
   { href: '/wardrobe', label: 'Guarda-roupa', icon: Shirt },
   { href: '/builder', label: 'Construtor IA', icon: Sparkles },
+  { href: '/manual-builder', label: 'Montagem Manual', icon: Package },
+  { href: '/manual-outfits', label: 'Meus Looks Manuais', icon: History },
   { href: '/feed', label: 'Inspiração', icon: Flame },
   { href: '/profile', label: 'Perfil', icon: User },
 ];
@@ -65,11 +69,16 @@ const storeNavItems = [
 
 function UserNav() {
   const { user } = useUser();
+  const { logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    // Mock logout logic
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
   };
   
   return (
@@ -85,10 +94,20 @@ function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium leading-none">{user?.name}</p>
+              {user?.type === 'STORE' && (
+                <Store className="h-3 w-3 text-blue-600" />
+              )}
+            </div>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
+            {user?.type === 'STORE' && (
+              <p className="text-xs leading-none text-blue-600 font-medium">
+                Conta Loja
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -113,7 +132,7 @@ function AppSidebar() {
     const pathname = usePathname();
     const { user } = useUser();
 
-    const allNavItems = user?.type === 'store' ? [...navItems, ...storeNavItems] : navItems;
+    const allNavItems = user?.type === 'STORE' ? [...navItems, ...storeNavItems] : navItems;
     
     const mainNavItems = allNavItems.filter(item => item.href !== '/outfit-of-the-day');
 
@@ -121,7 +140,7 @@ function AppSidebar() {
         <Sidebar collapsible="icon" className="border-r">
             <SidebarHeader>
                 <div className="flex h-12 items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
-                    <StyleWiseLogo className="h-8 w-auto" />
+                    <StyleLogo className="h-8 w-auto" />
                 </div>
                  <div className="hidden h-12 items-center justify-center p-2 group-data-[collapsible=icon]:flex">
                     <Sparkles className="h-6 w-6 text-accent" />
@@ -161,7 +180,7 @@ function MobileHeader() {
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Alternar Menu</span>
             </Button>
-            <StyleWiseLogo className="h-6 w-auto" />
+            <StyleLogo className="h-6 w-auto" />
             <div className="ml-auto">
                 <UserNav />
             </div>

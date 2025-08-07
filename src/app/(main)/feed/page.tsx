@@ -1,113 +1,247 @@
-
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Heart, Save } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-
-const feedItems = [
-  { id: 1, user: 'Lila Boutique', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x500', hint: 'woman fashion' },
-  { id: 2, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x600', hint: 'man streetstyle' },
-  { id: 3, user: 'Urban Threads', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x550', hint: 'woman casual' },
-  { id: 4, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x520', hint: 'elegant dress' },
-  { id: 5, user: 'Vintage Finds', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x580', hint: 'vintage outfit' },
-  { id: 6, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x510', hint: 'summer outfit' },
-  { id: 7, user: 'Sleek Wear', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x530', hint: 'business casual' },
-  { id: 8, user: 'Estilista IA', avatar: 'https://placehold.co/40x40', image: 'https://placehold.co/400x560', hint: 'autumn fashion' },
-];
+import { useState } from 'react';
+import { Heart, Bookmark, MessageCircle, Share } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
+import { useFeed } from '@/hooks/use-feed';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function FeedPage() {
-    const [likedItems, setLikedItems] = useState<Set<number>>(new Set());
-    const [savedItems, setSavedItems] = useState<Set<number>>(new Set());
-    const { toast } = useToast();
+  const { 
+    posts, 
+    pagination,
+    isLoading, 
+    backendError, 
+    toggleLike, 
+    toggleSave, 
+    loadMorePosts 
+  } = useFeed();
 
-    const toggleLike = (id: number) => {
-        setLikedItems(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-                toast({ title: "Look favoritado!" });
-            }
-            return newSet;
+  const handleLike = async (postId: string, isLiked: boolean = false) => {
+    try {
+      const success = await toggleLike(postId);
+      if (success) {
+        toast({
+          title: isLiked ? "Descurtido!" : "Curtido!",
+          description: isLiked 
+            ? "Post removido das suas curtidas."
+            : "Post adicionado às suas curtidas.",
         });
-    };
+      }
+    } catch (error) {
+      console.error('Erro ao curtir/descurtir:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a ação. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
-    const toggleSave = (id: number) => {
-        setSavedItems(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-                toast({ title: "Look salvo no seu perfil!" });
-            }
-            return newSet;
-        });
-    };
+  const handleSave = async (postId: string, isSaved: boolean = false) => {
+    try {
+      await toggleSave(postId);
+    } catch (error) {
+      console.error('Erro ao salvar/remover:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a ação. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
+  if (backendError) {
     return (
-        <div className="flex flex-col gap-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Feed de Inspiração</h1>
-                <p className="text-muted-foreground">Descubra looks da nossa comunidade e do estilista de IA.</p>
-            </div>
-            
-            <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
-                {feedItems.map(item => {
-                    const isLiked = likedItems.has(item.id);
-                    const isSaved = savedItems.has(item.id);
-
-                    return (
-                        <div key={item.id} className="break-inside-avoid">
-                            <Card className="overflow-hidden group relative">
-                                <Link href={`/feed/${item.id}`}>
-                                    <Image
-                                        src={item.image}
-                                        alt={`Look por ${item.user}`}
-                                        width={400}
-                                        height={500}
-                                        className="w-full h-auto object-cover cursor-pointer"
-                                        data-ai-hint={item.hint}
-                                    />
-                                </Link>
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <CardFooter className="p-3 absolute bottom-0 left-0 right-0 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Image src={item.avatar} alt={item.user} width={28} height={28} className="rounded-full border-2 border-white" data-ai-hint="avatar person" />
-                                            <p className="text-white text-sm font-medium">{item.user}</p>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className={cn("text-white hover:text-white hover:bg-white/20 h-8 w-8", isLiked && "text-red-500 bg-white/20")}
-                                                onClick={() => toggleLike(item.id)}
-                                            >
-                                                <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
-                                            </Button>
-                                             <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className={cn("text-white hover:text-white hover:bg-white/20 h-8 w-8", isSaved && "text-accent bg-white/20")}
-                                                onClick={() => toggleSave(item.id)}
-                                            >
-                                                <Save className={cn("h-4 w-4", isSaved && "fill-current")} />
-                                            </Button>
-                                        </div>
-                                    </CardFooter>
-                                </div>
-                            </Card>
-                        </div>
-                    )
-                })}
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="text-6xl mb-4">😔</div>
+          <h2 className="text-2xl font-bold mb-2">Ops! Algo deu errado</h2>
+          <p className="text-muted-foreground mb-4 max-w-md">
+            Não foi possível carregar o feed. Verifique sua conexão e tente novamente.
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Tentar Novamente
+          </Button>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Feed</h1>
+        <p className="text-muted-foreground">
+          Descubra os últimos looks e tendências das melhores lojas
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {isLoading && posts.length === 0 ? (
+          // Loading skeleton
+          Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="overflow-hidden">
+              <CardContent className="p-0">
+                {/* Header skeleton */}
+                <div className="p-4 flex items-center space-x-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                
+                {/* Image skeleton */}
+                <Skeleton className="w-full h-80" />
+                
+                {/* Actions skeleton */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-6 w-6" />
+                    <Skeleton className="h-6 w-6" />
+                    <Skeleton className="h-6 w-6" />
+                  </div>
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : posts.length === 0 ? (
+          // Empty state
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+            <div className="text-6xl mb-4">👗</div>
+            <h2 className="text-2xl font-bold mb-2">Nenhum post ainda</h2>
+            <p className="text-muted-foreground max-w-md">
+              O feed ainda está vazio. Quando as lojas começarem a postar, você verá os looks mais incríveis aqui!
+            </p>
+          </div>
+        ) : (
+          // Posts list
+          posts.map((post) => (
+            <Card key={post.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                {/* Post header */}
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={post.store.avatarUrl} />
+                      <AvatarFallback>
+                        {post.store.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-sm">{post.store.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(post.createdAt), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Post image */}
+                <div className="relative">
+                  <img
+                    src={post.imageUrl}
+                    alt={post.caption}
+                    className="w-full h-80 object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Post actions */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`p-0 h-auto ${
+                          post.isLiked ? 'text-red-500' : 'text-muted-foreground'
+                        }`}
+                        onClick={() => handleLike(post.id, post.isLiked || false)}
+                      >
+                        <Heart
+                          className={`h-6 w-6 ${
+                            post.isLiked ? 'fill-current' : ''
+                          }`}
+                        />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-0 h-auto text-muted-foreground"
+                      >
+                        <MessageCircle className="h-6 w-6" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-0 h-auto text-muted-foreground"
+                      >
+                        <Share className="h-6 w-6" />
+                      </Button>
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`p-0 h-auto ${
+                        post.isSaved ? 'text-blue-500' : 'text-muted-foreground'
+                      }`}
+                      onClick={() => handleSave(post.id, post.isSaved || false)}
+                    >
+                      <Bookmark
+                        className={`h-6 w-6 ${
+                          post.isSaved ? 'fill-current' : ''
+                        }`}
+                      />
+                    </Button>
+                  </div>
+
+                  {/* Likes count */}
+                  {post.likesCount > 0 && (
+                    <p className="font-semibold text-sm mb-2">
+                      {post.likesCount} {post.likesCount === 1 ? 'curtida' : 'curtidas'}
+                    </p>
+                  )}
+
+                  {/* Caption */}
+                  <div className="text-sm">
+                    <span className="font-semibold">{post.store.name}</span>{' '}
+                    <span>{post.caption}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+
+        {/* Load more button */}
+        {pagination?.hasNext && posts.length > 0 && (
+          <div className="flex justify-center pt-6">
+            <Button
+              onClick={loadMorePosts}
+              disabled={isLoading}
+              variant="outline"
+              size="lg"
+            >
+              {isLoading ? 'Carregando...' : 'Carregar mais posts'}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

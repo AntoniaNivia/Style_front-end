@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-import { BarChart, Heart, Image as ImageIcon, Send } from "lucide-react";
+import { BarChart, Heart, Image as ImageIcon, Send, Store } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -18,25 +18,69 @@ export default function PostPage() {
     const { toast } = useToast();
     const [isMounted, setIsMounted] = useState(false);
 
-    // In a real app, this would be handled by middleware or server-side checks.
+    // Verificação de permissão para usuários loja
     useEffect(() => {
         setIsMounted(true);
-        if (isMounted && user?.type !== 'store') {
+        if (isMounted && (!user || user.type !== 'STORE')) {
+            toast({
+                title: "Acesso Restrito",
+                description: "Apenas lojas podem criar postagens no feed.",
+                variant: "destructive",
+            });
             router.replace('/dashboard');
         }
-    }, [user, router, isMounted]);
+    }, [user, router, isMounted, toast]);
 
     const handlePost = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Verificação adicional de segurança
+        if (user?.type !== 'STORE') {
+            toast({
+                title: "Erro de Permissão",
+                description: "Você não tem permissão para criar postagens.",
+                variant: "destructive",
+            });
+            router.push('/dashboard');
+            return;
+        }
+        
         toast({
             title: "Postagem Criada!",
             description: "Sua nova postagem já está visível no Feed de Inspiração.",
-        })
+        });
         router.push('/feed');
     }
 
-    if (!isMounted || user?.type !== 'store') {
-        return <div className="flex h-full w-full items-center justify-center"><p>Carregando...</p></div>;
+    // Loading state enquanto verifica permissões
+    if (!isMounted || !user) {
+        return (
+            <div className="flex h-full w-full items-center justify-center">
+                <p>Carregando...</p>
+            </div>
+        );
+    }
+
+    // Bloqueio para usuários não autorizados
+    if (user.type !== 'STORE') {
+        return (
+            <div className="flex h-full w-full items-center justify-center flex-col space-y-4">
+                <Store className="h-12 w-12 text-muted-foreground" />
+                <div className="text-center">
+                    <h2 className="text-lg font-semibold">Acesso Restrito</h2>
+                    <p className="text-muted-foreground">
+                        Apenas usuários do tipo "Loja" podem criar postagens no feed.
+                    </p>
+                    <Button 
+                        onClick={() => router.push('/dashboard')} 
+                        className="mt-4"
+                        variant="outline"
+                    >
+                        Voltar ao Dashboard
+                    </Button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -45,7 +89,7 @@ export default function PostPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Criar Nova Postagem</CardTitle>
-                        <CardDescription>Compartilhe seus itens mais recentes com a comunidade StyleWise. As postagens aparecerão no Feed de Inspiração público.</CardDescription>
+                        <CardDescription>Compartilhe seus itens mais recentes com a comunidade Style. As postagens aparecerão no Feed de Inspiração público.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
@@ -86,25 +130,12 @@ export default function PostPage() {
                         <CardTitle>Postagens Recentes</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {Array.from({length: 2}).map((_, i) => (
-                             <div key={i} className="flex gap-4 items-center">
-                                <Image
-                                    src={`https://placehold.co/100x120.png`}
-                                    alt="Postagem recente"
-                                    width={80}
-                                    height={100}
-                                    className="rounded-md object-cover bg-secondary"
-                                    data-ai-hint="fashion outfit"
-                                />
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium leading-tight line-clamp-2">Coleção brisa de verão já disponível!</p>
-                                    <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                                        <Heart className="h-3 w-3" />
-                                        <span className="text-xs">152 curtidas</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                        <div className="text-center py-8">
+                            <p className="text-muted-foreground">Nenhuma postagem recente</p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                                Suas próximas postagens aparecerão aqui
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

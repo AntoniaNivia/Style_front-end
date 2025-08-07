@@ -4,18 +4,47 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/hooks/use-user";
+import { useWardrobe } from "@/hooks/use-wardrobe";
 import { ArrowRight, Bot, Flame, Plus, Shirt, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
     const { user } = useUser();
+    const { wardrobe, fetchWardrobe } = useWardrobe();
+
+    // Fetch wardrobe data when component mounts (WITH AUTHENTICATION CHECK)
+    useEffect(() => {
+        const token = document.cookie.split(';').find(c => c.trim().startsWith('auth_token='));
+        if (token) {
+            fetchWardrobe();
+        }
+    }, []);
+
+    // Calculate dynamic stats
+    const stats = {
+        totalItems: wardrobe.length,
+        totalOutfits: 0, // This would come from outfits data when implemented
+        favoriteItems: 0, // This would come from favorites data when implemented
+        aiCreations: 0 // This would come from AI-generated outfits when implemented
+    };
 
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Bem-vindo(a) de volta, {user ? user.name.split(' ')[0] : ''}!</h1>
-                <p className="text-muted-foreground">Aqui está seu resumo de estilo para hoje.</p>
+                <h1 className="text-3xl font-bold tracking-tight">
+                    {stats.totalItems === 0 && stats.totalOutfits === 0 
+                        ? `Bem-vindo(a) ao Style, ${user ? user.name.split(' ')[0] : ''}!`
+                        : `Bem-vindo(a) de volta, ${user ? user.name.split(' ')[0] : ''}!`
+                    }
+                </h1>
+                <p className="text-muted-foreground">
+                    {stats.totalItems === 0 && stats.totalOutfits === 0
+                        ? "Comece sua jornada de estilo criando seu primeiro guarda-roupa digital."
+                        : "Aqui está seu resumo de estilo para hoje."
+                    }
+                </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -27,9 +56,9 @@ export default function DashboardPage() {
                         <Shirt className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">124</div>
+                        <div className="text-2xl font-bold">{stats.totalItems}</div>
                         <p className="text-xs text-muted-foreground">
-                            +5 da última semana
+                            {stats.totalItems === 0 ? "Adicione seus primeiros itens" : "Itens em seu guarda-roupa"}
                         </p>
                     </CardContent>
                 </Card>
@@ -41,9 +70,9 @@ export default function DashboardPage() {
                         <Sparkles className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">32</div>
+                        <div className="text-2xl font-bold">{stats.totalOutfits}</div>
                         <p className="text-xs text-muted-foreground">
-                            +3 gerados por IA esta semana
+                            {stats.totalOutfits === 0 ? "Crie seus primeiros looks" : "Looks salvos"}
                         </p>
                     </CardContent>
                 </Card>
@@ -53,9 +82,9 @@ export default function DashboardPage() {
                         <Flame className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">15</div>
+                        <div className="text-2xl font-bold">{stats.favoriteItems}</div>
                         <p className="text-xs text-muted-foreground">
-                            Do feed de inspiração
+                            {stats.favoriteItems === 0 ? "Explore o feed para favoritar" : "Itens favoritados"}
                         </p>
                     </CardContent>
                 </Card>
@@ -65,8 +94,10 @@ export default function DashboardPage() {
                         <Bot className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">8</div>
-                        <p className="text-xs text-muted-foreground">Total de looks gerados</p>
+                        <div className="text-2xl font-bold">{stats.aiCreations}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {stats.aiCreations === 0 ? "Use o Builder de IA" : "Looks gerados por IA"}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -77,26 +108,18 @@ export default function DashboardPage() {
                         <CardTitle>Look do Dia</CardTitle>
                         <CardDescription>Sua sugestão de look personalizada do nosso estilista de IA.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-6 items-center">
-                        <Image
-                            src="https://placehold.co/400x600"
-                            alt="Look do dia"
-                            width={200}
-                            height={300}
-                            className="rounded-lg object-cover"
-                            data-ai-hint="mannequin fashion"
-                        />
-                        <div className="flex-1 space-y-4">
-                            <h3 className="text-xl font-semibold">Urbano Explorador Chique</h3>
-                            <p className="text-muted-foreground">
-                                Uma mistura perfeita de conforto e estilo para suas aventuras na cidade. Este look combina uma jaqueta jeans clássica com uma camiseta de algodão macio e joggers pretos versáteis. Tênis brancos completam o conjunto para caminhadas durante todo o dia.
-                            </p>
-                            <Link href="/outfit-of-the-day">
-                                <Button className="bg-accent hover:bg-accent/90">
-                                    Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </div>
+                    <CardContent className="flex flex-col items-center text-center py-8">
+                        <p className="text-muted-foreground mb-4">
+                            Ainda não temos um look do dia para você
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Complete seu guarda-roupa para receber sugestões personalizadas
+                        </p>
+                        <Link href="/builder">
+                            <Button className="bg-accent hover:bg-accent/90">
+                                Gerar Look do Dia <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </Link>
                     </CardContent>
                 </Card>
                 <div className="space-y-4">

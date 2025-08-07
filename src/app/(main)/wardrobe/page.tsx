@@ -6,10 +6,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { useWardrobe, type ClothingItem } from "@/hooks/use-wardrobe";
-import type { AnalyzeClothingOutput } from '@/lib/types';
-import { Loader2, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
+import { useWardrobe } from "@/hooks/use-wardrobe";
+import type { AnalyzeClothingOutput, ClothingItem } from '@/lib/types';
+import { Loader2, Plus, SlidersHorizontal, Sparkles, Trash2 } from "lucide-react";
+import { AIAnalysisDebug } from "@/components/ai-analysis-debug";
 import Image from "next/image";
 import * as React from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -18,22 +20,87 @@ type AddItemFormValues = Omit<ClothingItem, 'id' | 'userId' | 'photoUrl' | 'phot
     photo: FileList;
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { addClothingItem } = useWardrobe();
+    const { addClothingItem, analyzeClothing } = useWardrobe();
     const { toast } = useToast();
     const { register, handleSubmit, control, formState: { errors }, reset, setValue, clearErrors } = useForm<AddItemFormValues>();
     const [isAnalyzing, setIsAnalyzing] = React.useState(false);
     const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+    const [lastAnalysis, setLastAnalysis] = React.useState<AnalyzeClothingOutput | null>(null);
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                toast({
+                    title: "Arquivo inválido",
+                    description: "Por favor, selecione apenas arquivos de imagem.",
+                    variant: "destructive",
+                });
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast({
+                    title: "Arquivo muito grande",
+                    description: "Por favor, selecione uma imagem menor que 5MB.",
+                    variant: "destructive",
+                });
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onloadend = () => {
-                setPreviewImage(reader.result as string);
+                const result = reader.result as string;
+                
+                // Create image to get dimensions and potentially resize
+                const img = document.createElement('img');
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (!ctx) {
+                        setPreviewImage(result);
+                        return;
+                    }
+                    
+                    // Optimize image size (max 1024px on longest side)
+                    const maxSize = 1024;
+                    let { width, height } = img;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = (height * maxSize) / width;
+                            width = maxSize;
+                        } else {
+                            width = (width * maxSize) / height;
+                            height = maxSize;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw image with better quality
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convert to base64 with good quality
+                    const optimizedImage = canvas.toDataURL('image/jpeg', 0.9);
+                    setPreviewImage(optimizedImage);
+                    
+                    console.log('🖼️ Image optimized:', {
+                        originalSize: file.size,
+                        originalDimensions: `${img.naturalWidth}x${img.naturalHeight}`,
+                        optimizedDimensions: `${width}x${height}`,
+                        optimizedSize: optimizedImage.length
+                    });
+                };
+                img.src = result;
             };
             reader.readAsDataURL(file);
         } else {
@@ -50,29 +117,88 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
             });
             return;
         }
+        
+        console.log('🔍 handleAnalyze called with previewImage:', {
+            hasPreviewImage: !!previewImage,
+            imageLength: previewImage?.length,
+            imageStart: previewImage?.substring(0, 100) + '...'
+        });
+        
         setIsAnalyzing(true);
         try {
-            // This is a placeholder for calling the backend
-            const response = await fetch(`${API_URL}/wardrobe/analyze`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photoDataUri: previewImage })
+            const name = (document.querySelector('[name="name"]') as HTMLInputElement)?.value || '';
+            const description = (document.querySelector('[name="description"]') as HTMLTextAreaElement)?.value || '';
+            
+            // Create a more descriptive context for AI analysis
+            const enhancedDescription = description || 
+                `Analise esta peça de roupa com atenção aos detalhes. ${name ? `Nome: ${name}. ` : ''}
+                Identifique corretamente o tipo de peça (calça, camiseta, vestido, etc.), 
+                a cor predominante, a estação mais apropriada e a ocasião de uso.`;
+            
+            const analysis = await analyzeClothing({
+                image: previewImage,
+                name: name,
+                description: enhancedDescription
             });
 
-            if (!response.ok) throw new Error("Analysis failed");
+            console.log('✅ Analysis result:', analysis);
 
-            const result: AnalyzeClothingOutput = await response.json();
-            
-            setValue('type', result.type);
-            setValue('color', result.color);
-            setValue('season', result.season);
-            setValue('occasion', result.occasion);
-            setValue('tags', result.tags);
-            clearErrors();
-            toast({
-                title: "Análise Concluída",
-                description: "Os detalhes da sua peça de roupa foram preenchidos.",
-            })
+            if (analysis) {
+                // Store analysis for debug component
+                setLastAnalysis(analysis);
+                // Check confidence level and quality
+                const confidence = analysis.confidence || 0;
+                const qualityScore = analysis.qualityScore || 0;
+                const retryCount = analysis.retryCount || 0;
+                
+                console.log('🎯 Analysis metrics:', { 
+                    confidence, 
+                    qualityScore, 
+                    retryCount,
+                    reasoning: analysis.reasoning 
+                });
+                
+                setValue('type', analysis.type);
+                setValue('color', analysis.color);
+                setValue('season', analysis.season);
+                setValue('occasion', analysis.occasion);
+                setValue('tags', analysis.tags || []);
+                clearErrors();
+                
+                // Create detailed feedback message with backend improvements
+                let feedbackMessage = `🎯 Identifiquei: ${analysis.type} ${analysis.color} para ${analysis.occasion}`;
+                
+                // Add quality and confidence indicators
+                if (qualityScore > 0) {
+                    if (qualityScore < 0.7) {
+                        feedbackMessage += ` (⚠️ Qualidade: ${Math.round(qualityScore * 100)}%)`;
+                    } else if (qualityScore > 0.9) {
+                        feedbackMessage += ` (📸 Excelente qualidade)`;
+                    }
+                }
+                
+                if (retryCount > 1) {
+                    feedbackMessage += ` (🔄 ${retryCount} tentativas)`;
+                }
+                
+                if (confidence > 0.95) {
+                    feedbackMessage += ` (🎯 Alta precisão)`;
+                }
+                
+                // Determine toast variant based on quality and confidence
+                const toastVariant = (confidence < 0.7 || (qualityScore > 0 && qualityScore < 0.6)) ? "destructive" : "default";
+                
+                toast({
+                    title: "✨ Análise concluída com IA aprimorada!",
+                    description: feedbackMessage,
+                    variant: toastVariant
+                });
+                
+                // Show reasoning in console for debugging
+                if (analysis.reasoning) {
+                    console.log('🧠 AI Reasoning:', analysis.reasoning);
+                }
+            }
         } catch (error) {
             console.error("Error analyzing item:", error);
             toast({
@@ -103,27 +229,14 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
         };
 
         try {
-            const response = await fetch(`${API_URL}/wardrobe`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // 'Authorization': `Bearer ${your_jwt_token}`
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) throw new Error('Failed to add item');
+            // Use the wardrobe hook which handles API calls and state management
+            const newItem = await addClothingItem(payload);
             
-            const newClothingItem = await response.json();
-            addClothingItem(newClothingItem);
-
-            toast({
-                title: "Item Adicionado!",
-                description: "Sua nova peça foi adicionada ao guarda-roupa.",
-            });
-            reset();
-            setPreviewImage(null);
-            onOpenChange(false);
+            if (newItem) {
+                reset();
+                setPreviewImage(null);
+                onOpenChange(false);
+            }
         } catch (error) {
             console.error("Error adding item:", error);
             toast({
@@ -219,6 +332,13 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                             <Input id="tags" placeholder="ex: vintage, floral, confortável" {...register("tags")} />
                         </div>
                     </div>
+                    
+                    {/* Debug da Análise de IA */}
+                    <AIAnalysisDebug 
+                        analysis={lastAnalysis} 
+                        show={process.env.NEXT_PUBLIC_DEBUG === 'true'} 
+                    />
+                    
                     <DialogFooter>
                         <Button type="submit" className="bg-accent hover:bg-accent/90">Salvar item</Button>
                     </DialogFooter>
@@ -229,31 +349,34 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
 }
 
 export default function WardrobePage() {
-    const { wardrobe, setWardrobe } = useWardrobe();
+    const { wardrobe, isLoading, fetchWardrobe, deleteClothingItem } = useWardrobe();
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const [deletingItemId, setDeletingItemId] = React.useState<string | null>(null);
 
+    // Handle delete item with confirmation
+    const handleDeleteItem = async (itemId: string, itemName: string) => {
+        const confirmed = window.confirm(`Tem certeza que deseja excluir "${itemName}" do seu guarda-roupa?`);
+        
+        if (!confirmed) return;
+
+        try {
+            setDeletingItemId(itemId);
+            await deleteClothingItem(itemId);
+        } finally {
+            setDeletingItemId(null);
+        }
+    };
+
+    // Load wardrobe data when component mounts (WITH AUTHENTICATION CHECK)
     React.useEffect(() => {
-        const fetchWardrobe = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch(`${API_URL}/wardrobe`, {
-                    headers: {
-                        // 'Authorization': `Bearer ${your_jwt_token}`
-                    }
-                });
-                if (!response.ok) throw new Error("Failed to fetch wardrobe");
-                const data = await response.json();
-                setWardrobe(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchWardrobe();
-    }, [setWardrobe]);
+        // Don't fetch without proper authentication
+        const token = document.cookie.split(';').find(c => c.trim().startsWith('auth_token='));
+        if (token) {
+            fetchWardrobe();
+        } else {
+            console.warn('Wardrobe page: No auth token found, skipping fetchWardrobe');
+        }
+    }, []);
 
 
     return (
@@ -276,7 +399,7 @@ export default function WardrobePage() {
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {wardrobe.map((item) => (
-                        <Card key={item.id} className="overflow-hidden group">
+                        <Card key={item.id} className={`overflow-hidden group transition-opacity ${deletingItemId === item.id ? 'opacity-50' : ''}`}>
                             <CardContent className="p-0">
                                 <Image
                                     src={item.photoUrl} // Use photoUrl from backend
@@ -292,6 +415,28 @@ export default function WardrobePage() {
                                     <p className="font-semibold text-sm">{item.type}</p>
                                     <p className="text-xs text-muted-foreground">{item.color}</p>
                                 </div>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDeleteItem(item.id, `${item.color} ${item.type}`)}
+                                                disabled={deletingItemId === item.id}
+                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                                {deletingItemId === item.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Excluir item</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             </CardFooter>
                         </Card>
                     ))}
