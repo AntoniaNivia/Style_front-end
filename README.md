@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # StyleWise - AI Fashion Assistant 🎨
 
 Um assistente de moda inteligente que ajuda você a criar looks incríveis usando IA.
@@ -73,3 +74,7 @@ Este projeto é privado e desenvolvido para fins educacionais.
 ---
 
 Desenvolvido com ❤️ por [kassiods](https://github.com/kassiods)
+=======
+# Style_front-end
+# Style_front-end
+>>>>>>> a365580fbcfafaa4175857b5bcb188dc6e8589e6
