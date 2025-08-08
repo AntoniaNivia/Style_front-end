@@ -60,7 +60,7 @@ npm run db:migrate
 ```bash
 npm run dev
 ```
-O backend estará rodando em: http://localhost:3001
+O backend está hospedado no Render em: https://style-back-end.onrender.com
 
 ### 3. 🎨 Configurar Frontend
 
@@ -76,7 +76,7 @@ npm install
 
 #### 3.3 Verificar arquivo `.env.local`:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_API_URL=https://style-back-end.onrender.com/api
 NODE_ENV=development
 ```
 
@@ -118,7 +118,7 @@ Para funcionar completamente, você precisa:
 #### Backend não conecta:
 - Verifique se a porta 3001 está livre
 - Confirme que todas as env vars estão configuradas
-- Teste: `curl http://localhost:3001/api/health`
+- Teste: `curl https://style-back-end.onrender.com/api/health`
 
 #### Frontend não conecta:
 - Verifique o .env.local

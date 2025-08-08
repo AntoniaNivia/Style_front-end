@@ -11,24 +11,13 @@ $frontendPath = "C:\Users\lardo\OneDrive\Área de Trabalho\Style_front-end"
 $backendPath = "$frontendPath\stylewise-backend"
 
 function Start-Services {
-    Write-Host "🚀 Iniciando serviços..." -ForegroundColor Green
+    Write-Host "🚀 Iniciando frontend..." -ForegroundColor Green
+    Write-Host "ℹ️  Backend está hospedado no Render: https://style-back-end.onrender.com" -ForegroundColor Cyan
     
-    # Verificar se as pastas existem
+    # Verificar se a pasta do frontend existe
     if (!(Test-Path $frontendPath)) {
         Write-Host "❌ Pasta do frontend não encontrada: $frontendPath" -ForegroundColor Red
         return
-    }
-    
-    if (!(Test-Path $backendPath)) {
-        Write-Host "❌ Pasta do backend não encontrada: $backendPath" -ForegroundColor Red
-        return
-    }
-    
-    # Verificar node_modules do backend
-    if (!(Test-Path "$backendPath\node_modules")) {
-        Write-Host "📦 Instalando dependências do backend..." -ForegroundColor Yellow
-        Set-Location $backendPath
-        npm install
     }
     
     # Verificar node_modules do frontend
@@ -40,12 +29,15 @@ function Start-Services {
     
     Write-Host "✅ Dependências verificadas" -ForegroundColor Green
     
-    # Iniciar backend em nova janela
-    Write-Host "🔧 Iniciando Backend (porta 3001)..." -ForegroundColor Cyan
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$backendPath'; Write-Host '🔧 StyleWise Backend' -ForegroundColor Cyan; npm run dev"
-    
-    # Aguardar um pouco para o backend iniciar
-    Start-Sleep -Seconds 3
+    # Verificar se o backend está acessível
+    Write-Host "� Verificando backend no Render..." -ForegroundColor Cyan
+    try {
+        $backendResponse = Invoke-WebRequest -Uri "https://style-back-end.onrender.com/api/health" -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "✅ Backend no Render está online" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "⚠️  Backend no Render não está respondendo - primeira requisição pode demorar" -ForegroundColor Yellow
+    }
     
     # Iniciar frontend em nova janela
     Write-Host "🌐 Iniciando Frontend (porta 9002)..." -ForegroundColor Cyan
@@ -56,7 +48,7 @@ function Start-Services {
     
     Write-Host "🎉 StyleWise iniciado com sucesso!" -ForegroundColor Green
     Write-Host "🌐 Frontend: http://localhost:9002" -ForegroundColor Yellow
-    Write-Host "🔧 Backend: http://localhost:3001" -ForegroundColor Yellow
+    Write-Host "🔧 Backend: https://style-back-end.onrender.com" -ForegroundColor Yellow
     
     # Abrir browser
     Write-Host "🌍 Abrindo browser..." -ForegroundColor Green
@@ -64,12 +56,12 @@ function Start-Services {
 }
 
 function Stop-Services {
-    Write-Host "🛑 Parando serviços StyleWise..." -ForegroundColor Red
+    Write-Host "🛑 Parando frontend..." -ForegroundColor Red
+    Write-Host "ℹ️  Backend está no Render (não precisa ser parado)" -ForegroundColor Cyan
     
-    # Parar processos Node.js relacionados ao projeto
+    # Parar processos Node.js relacionados ao frontend
     $nodeProcesses = Get-Process node -ErrorAction SilentlyContinue | Where-Object {
         $_.CommandLine -like "*stylewise*" -or
-        $_.CommandLine -like "*3001*" -or
         $_.CommandLine -like "*9002*"
     }
     
@@ -78,19 +70,19 @@ function Stop-Services {
         Stop-Process -Id $process.Id -Force
     }
     
-    Write-Host "✅ Serviços parados" -ForegroundColor Green
+    Write-Host "✅ Frontend parado" -ForegroundColor Green
 }
 
 function Show-Status {
     Write-Host "📊 Status dos serviços..." -ForegroundColor Cyan
     
-    # Verificar se o backend está rodando
+    # Verificar se o backend está rodando no Render
     try {
-        $backendResponse = Invoke-WebRequest -Uri "http://localhost:3001/api/health" -TimeoutSec 5 -ErrorAction Stop
-        Write-Host "✅ Backend: Online (http://localhost:3001)" -ForegroundColor Green
+        $backendResponse = Invoke-WebRequest -Uri "https://style-back-end.onrender.com/api/health" -TimeoutSec 10 -ErrorAction Stop
+        Write-Host "✅ Backend: Online (https://style-back-end.onrender.com)" -ForegroundColor Green
     }
     catch {
-        Write-Host "❌ Backend: Offline" -ForegroundColor Red
+        Write-Host "❌ Backend: Offline ou demorado (primeira requisição pode demorar)" -ForegroundColor Red
     }
     
     # Verificar se o frontend está rodando
@@ -115,9 +107,9 @@ switch ($Action.ToLower()) {
     }
     default {
         Write-Host "Uso: .\start-stylewise.ps1 [start|stop|status|restart]" -ForegroundColor Yellow
-        Write-Host "  start   - Inicia frontend e backend" -ForegroundColor White
-        Write-Host "  stop    - Para todos os serviços" -ForegroundColor White
+        Write-Host "  start   - Inicia frontend (backend está no Render)" -ForegroundColor White
+        Write-Host "  stop    - Para o frontend" -ForegroundColor White
         Write-Host "  status  - Mostra status dos serviços" -ForegroundColor White
-        Write-Host "  restart - Reinicia todos os serviços" -ForegroundColor White
+        Write-Host "  restart - Reinicia o frontend" -ForegroundColor White
     }
 }

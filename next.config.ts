@@ -28,13 +28,19 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'style-back-end.onrender.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: 'https://style-back-end.onrender.com/api/:path*',
       },
     ];
   },
