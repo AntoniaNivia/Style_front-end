@@ -353,12 +353,11 @@ export default function WardrobePage() {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [deletingItemId, setDeletingItemId] = React.useState<string | null>(null);
 
+
     // Handle delete item with confirmation
     const handleDeleteItem = async (itemId: string, itemName: string) => {
         const confirmed = window.confirm(`Tem certeza que deseja excluir "${itemName}" do seu guarda-roupa?`);
-        
         if (!confirmed) return;
-
         try {
             setDeletingItemId(itemId);
             await deleteClothingItem(itemId);
@@ -367,81 +366,41 @@ export default function WardrobePage() {
         }
     };
 
-    // Load wardrobe data when component mounts (WITH AUTHENTICATION CHECK)
-    React.useEffect(() => {
-        // Don't fetch without proper authentication
-        const token = document.cookie.split(';').find(c => c.trim().startsWith('auth_token='));
-        if (token) {
-            fetchWardrobe();
-        } else {
-            console.warn('Wardrobe page: No auth token found, skipping fetchWardrobe');
-        }
-    }, []);
-
-
+    // TODO: Render wardrobe UI here (grid, cards, etc.)
+    // This is a placeholder. Add your wardrobe rendering code below.
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Meu Guarda-Roupa</h1>
-                    <p className="text-muted-foreground">Navegue e gerencie seus itens de vestuário.</p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline"><SlidersHorizontal className="mr-2 h-4 w-4" /> Filtros</Button>
-                    <AddItemDialog onOpenChange={setIsDialogOpen} />
-                </div>
-            </div>
-
-            {isLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {Array.from({ length: 5 }).map((_, i) => <Card key={i} className="h-[400px] animate-pulse bg-muted" />)}
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {wardrobe.map((item) => (
-                        <Card key={item.id} className={`overflow-hidden group transition-opacity ${deletingItemId === item.id ? 'opacity-50' : ''}`}>
-                            <CardContent className="p-0">
-                                <Image
-                                    src={item.photoUrl} // Use photoUrl from backend
-                                    alt={`${item.color} ${item.type}`}
-                                    width={300}
-                                    height={400}
-                                    className="object-cover w-full h-auto aspect-[3/4] transition-transform duration-300 group-hover:scale-105"
-                                    data-ai-hint={`${item.type} ${item.color}`}
-                                />
-                            </CardContent>
-                            <CardFooter className="p-3 flex justify-between items-center bg-background/80 backdrop-blur-sm">
-                                <div>
-                                    <p className="font-semibold text-sm">{item.type}</p>
-                                    <p className="text-xs text-muted-foreground">{item.color}</p>
+        <div className="p-4 md:p-8 lg:p-12 xl:p-16">
+            <h1 className="text-2xl font-bold mb-4">Guarda-Roupa</h1>
+            {/* Adicione aqui o grid de itens do guarda-roupa, cards, botões, etc. */}
+            <AddItemDialog onOpenChange={setIsDialogOpen} />
+            {/* Exemplo de renderização dos itens (substitua pelo seu layout real) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+                {isLoading ? (
+                    <div className="col-span-full flex justify-center items-center">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <span className="ml-2">Carregando...</span>
+                    </div>
+                ) : (
+                    wardrobe?.map(item => (
+                        <Card key={item.id} className="relative">
+                            <CardContent>
+                                <Image src={item.photoUrl || '/stylewise-logo.png'} alt={item.type} width={150} height={200} className="rounded-md object-cover mx-auto" />
+                                <div className="mt-2">
+                                    <div className="font-semibold">{item.type}</div>
+                                    <div className="text-sm text-muted-foreground">{item.color}</div>
+                                    <div className="text-xs text-muted-foreground">{item.season} • {item.occasion}</div>
                                 </div>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteItem(item.id, `${item.color} ${item.type}`)}
-                                                disabled={deletingItemId === item.id}
-                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            >
-                                                {deletingItemId === item.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Trash2 className="h-4 w-4" />
-                                                )}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Excluir item</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center">
+                                <Button variant="destructive" size="sm" onClick={() => handleDeleteItem(item.id, item.type)} disabled={deletingItemId === item.id}>
+                                    {deletingItemId === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                    <span className="ml-2">Excluir</span>
+                                </Button>
                             </CardFooter>
                         </Card>
-                    ))}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
         </div>
     );
 }

@@ -31,15 +31,15 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 px-2 sm:px-4 md:px-8 w-full">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                     {stats.totalItems === 0 && stats.totalOutfits === 0 
                         ? `Bem-vindo(a) ao Style, ${user ? user.name.split(' ')[0] : ''}!`
                         : `Bem-vindo(a) de volta, ${user ? user.name.split(' ')[0] : ''}!`
                     }
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-base sm:text-lg">
                     {stats.totalItems === 0 && stats.totalOutfits === 0
                         ? "Comece sua jornada de estilo criando seu primeiro guarda-roupa digital."
                         : "Aqui está seu resumo de estilo para hoje."
@@ -47,7 +47,7 @@ export default function DashboardPage() {
                 </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
@@ -102,7 +102,7 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-3">
+            <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Look do Dia</CardTitle>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
                             Complete seu guarda-roupa para receber sugestões personalizadas
                         </p>
                         <Link href="/builder">
-                            <Button className="bg-accent hover:bg-accent/90">
+                            <Button className="bg-accent hover:bg-accent/90 w-full sm:w-auto">
                                 Gerar Look do Dia <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </Link>
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                             <h3 className="text-lg font-semibold">Expanda Seu Guarda-Roupa</h3>
                             <p className="text-sm text-muted-foreground">Adicione novos itens para obter recomendações de IA ainda melhores.</p>
                              <Link href="/wardrobe">
-                                <Button variant="outline"><Plus className="mr-2 h-4 w-4" /> Adicionar Item</Button>
+                                <Button variant="outline" className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" /> Adicionar Item</Button>
                             </Link>
                         </CardContent>
                     </Card>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
                             <h3 className="text-lg font-semibold">Crie um Novo Look</h3>
                             <p className="text-sm text-muted-foreground">Deixe nossa IA montar o look perfeito para qualquer ocasião.</p>
                             <Link href="/builder">
-                                <Button className="bg-accent hover:bg-accent/90">Construtor IA <Bot className="ml-2 h-4 w-4" /></Button>
+                                <Button className="bg-accent hover:bg-accent/90 w-full sm:w-auto">Construtor IA <Bot className="ml-2 h-4 w-4" /></Button>
                             </Link>
                         </CardContent>
                     </Card>

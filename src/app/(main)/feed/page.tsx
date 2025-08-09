@@ -12,14 +12,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function FeedPage() {
-  const { 
-    posts, 
+  const {
+    posts,
     pagination,
-    isLoading, 
-    backendError, 
-    toggleLike, 
-    toggleSave, 
-    loadMorePosts 
+    isLoading,
+    backendError,
+    toggleLike,
+    toggleSave,
+    loadMorePosts
   } = useFeed();
 
   const handleLike = async (postId: string, isLiked: boolean = false) => {
@@ -28,7 +28,7 @@ export default function FeedPage() {
       if (success) {
         toast({
           title: isLiked ? "Descurtido!" : "Curtido!",
-          description: isLiked 
+          description: isLiked
             ? "Post removido das suas curtidas."
             : "Post adicionado às suas curtidas.",
         });
@@ -74,10 +74,10 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-2 sm:px-4 py-8 max-w-full sm:max-w-2xl w-full">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Feed</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Feed</h1>
+        <p className="text-muted-foreground text-base sm:text-lg">
           Descubra os últimos looks e tendências das melhores lojas
         </p>
       </div>
@@ -89,20 +89,18 @@ export default function FeedPage() {
             <Card key={index} className="overflow-hidden">
               <CardContent className="p-0">
                 {/* Header skeleton */}
-                <div className="p-4 flex items-center space-x-3">
+                <div className="p-4 flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-full" />
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-3 w-24" />
                   </div>
                 </div>
-                
                 {/* Image skeleton */}
-                <Skeleton className="w-full h-80" />
-                
+                <Skeleton className="w-full h-48 sm:h-80" />
                 {/* Actions skeleton */}
                 <div className="p-4 space-y-3">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center gap-4">
                     <Skeleton className="h-6 w-6" />
                     <Skeleton className="h-6 w-6" />
                     <Skeleton className="h-6 w-6" />
@@ -115,9 +113,9 @@ export default function FeedPage() {
           ))
         ) : posts.length === 0 ? (
           // Empty state
-          <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px] text-center">
             <div className="text-6xl mb-4">👗</div>
-            <h2 className="text-2xl font-bold mb-2">Nenhum post ainda</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Nenhum post ainda</h2>
             <p className="text-muted-foreground max-w-md">
               O feed ainda está vazio. Quando as lojas começarem a postar, você verá os looks mais incríveis aqui!
             </p>
@@ -129,7 +127,7 @@ export default function FeedPage() {
               <CardContent className="p-0">
                 {/* Post header */}
                 <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={post.store.avatarUrl} />
                       <AvatarFallback>
@@ -153,7 +151,7 @@ export default function FeedPage() {
                   <img
                     src={post.imageUrl}
                     alt={post.caption}
-                    className="w-full h-80 object-cover"
+                    className="w-full h-48 sm:h-80 object-cover rounded-md"
                     loading="lazy"
                   />
                 </div>
@@ -161,7 +159,7 @@ export default function FeedPage() {
                 {/* Post actions */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center gap-4">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -176,7 +174,6 @@ export default function FeedPage() {
                           }`}
                         />
                       </Button>
-                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -184,7 +181,6 @@ export default function FeedPage() {
                       >
                         <MessageCircle className="h-6 w-6" />
                       </Button>
-                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -193,7 +189,6 @@ export default function FeedPage() {
                         <Share className="h-6 w-6" />
                       </Button>
                     </div>
-                    
                     <Button
                       variant="ghost"
                       size="sm"
@@ -236,6 +231,7 @@ export default function FeedPage() {
               disabled={isLoading}
               variant="outline"
               size="lg"
+              className="w-full sm:w-auto"
             >
               {isLoading ? 'Carregando...' : 'Carregar mais posts'}
             </Button>
