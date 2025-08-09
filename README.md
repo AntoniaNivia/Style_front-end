@@ -71,10 +71,4 @@ O projeto está configurado para usar o backend hospedado no Render. Todas as re
 
 Este projeto é privado e desenvolvido para fins educacionais.
 
----
-
-Desenvolvido com ❤️ por [kassiods](https://github.com/kassiods)
-=======
-# Style_front-end
-# Style_front-end
->>>>>>> a365580fbcfafaa4175857b5bcb188dc6e8589e6
+--
