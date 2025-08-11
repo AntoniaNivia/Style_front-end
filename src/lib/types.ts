@@ -145,6 +145,13 @@ export interface AuthResponse {
 // Wardrobe Types
 export interface AddClothingItemData {
   photoDataUri: string;
+  type: string;
+  color: string;
+  season?: string;
+  occasion?: string;
+  tags?: string[];
+  name?: string;
+  description?: string;
 }
 
 export interface WardrobeFilters {

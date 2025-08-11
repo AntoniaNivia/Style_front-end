@@ -137,8 +137,6 @@ export const manualOutfitService = {
   }): Promise<OutfitListResponse['data']> {
     try {
       console.log('📥 Fetching user outfits:', params);
-      
-      // Build query string - backend now supports these parameters
       const queryParams = new URLSearchParams();
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -146,41 +144,32 @@ export const manualOutfitService = {
       if (params?.tags) queryParams.append('tags', params.tags);
       if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-
       const url = `/api/manual-outfits/my${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const response = await api.get<OutfitListResponse>(url);
-      
-      if (response.data.success) {
-        const apiData = response.data.data;
-        console.log('✅ Outfits fetched from API:', apiData.outfits.length);
-        
-        // In development, merge with any local test data
-        if (process.env.NODE_ENV === 'development') {
-          const localOutfits = this.getLocalOutfits();
-          const testOnlyOutfits = localOutfits.filter(outfit => outfit.isLocalOnly);
-          
-          if (testOnlyOutfits.length > 0) {
-            console.log('🔧 Adding', testOnlyOutfits.length, 'local test outfits');
-            const mergedOutfits = this.mergeOutfits(apiData.outfits, testOnlyOutfits);
-            
-            return {
-              outfits: mergedOutfits,
-              pagination: {
-                ...apiData.pagination,
-                total: mergedOutfits.length
-              }
-            };
-          }
-        }
-        
-        return apiData;
-      } else {
-        throw new Error('API returned success: false');
+      if (!response.data || !response.data.success || !response.data.data) {
+        throw new Error('Resposta da API inválida ou vazia ao buscar outfits.');
       }
+      const apiData = response.data.data;
+      console.log('✅ Outfits fetched from API:', apiData.outfits.length);
+      // In development, merge with any local test data
+      if (process.env.NODE_ENV === 'development') {
+        const localOutfits = this.getLocalOutfits();
+        const testOnlyOutfits = localOutfits.filter(outfit => outfit.isLocalOnly);
+        if (testOnlyOutfits.length > 0) {
+          console.log('🔧 Adding', testOnlyOutfits.length, 'local test outfits');
+          const mergedOutfits = this.mergeOutfits(apiData.outfits, testOnlyOutfits);
+          return {
+            outfits: mergedOutfits,
+            pagination: {
+              ...apiData.pagination,
+              total: mergedOutfits.length
+            }
+          };
+        }
+      }
+      return apiData;
     } catch (error: any) {
       console.error('❌ Error fetching outfits from API:', error);
-      
-      // Provide helpful error message
       if (error.response?.status === 401) {
         throw new Error('Você precisa estar logado para ver seus looks');
       } else if (error.response?.status === 403) {
@@ -188,15 +177,12 @@ export const manualOutfitService = {
       } else if (error.response?.status >= 500) {
         throw new Error('Erro do servidor. Tente novamente em alguns instantes');
       }
-      
       // In development, fallback to local/demo data for testing
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 Using local/demo data for development testing');
-        
         const localOutfits = this.getLocalOutfits();
         const demoOutfits = this.getDemoOutfits();
         const allOutfits = [...localOutfits, ...demoOutfits];
-        
         return {
           outfits: allOutfits,
           pagination: {
@@ -209,7 +195,6 @@ export const manualOutfitService = {
           }
         };
       }
-      
       throw error;
     }
   },

@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://style-back-end.onrender.com/api/:path*',
+        destination: 'https://style-back-end.onrender.com/:path*',
       },
     ];
   },

@@ -3,7 +3,10 @@ import Cookies from 'js-cookie';
 
 // API Configuration
 // Use proxy to avoid CORS issues - Next.js will redirect to backend
-export const API_BASE_URL = '/api';
+export const API_BASE_URL =
+  process.env.NODE_ENV === 'development'
+    ? '/api'
+    : 'https://style-back-end.onrender.com';
 
 // Debug logging
 if (process.env.NEXT_PUBLIC_DEBUG === 'true') {

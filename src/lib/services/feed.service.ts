@@ -10,33 +10,28 @@ import {
 export const feedService = {
   // Get feed posts
   async getFeed(filters?: FeedFilters): Promise<PaginationResult<FeedPost>> {
-    console.log('📊 Buscando posts do feed...');
-    
     try {
+      console.log('📊 Buscando posts do feed...');
       const params = new URLSearchParams();
-      
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
-
       const response = await apiClient.get<ApiResponse<PaginationResult<FeedPost>>>(
-        `/feed?${params.toString()}`
+        `/api/feed${params.toString() ? '?' + params.toString() : ''}`
       );
-      
+      if (!response.data || !response.data.data) {
+        throw new Error('Resposta da API inválida ou vazia ao buscar posts do feed.');
+      }
       console.log('✅ Posts do feed obtidos:', response.data);
-      return response.data.data!;
+      return response.data.data;
     } catch (error: any) {
       console.error('❌ Erro ao buscar posts do feed:', error);
-      
-      // Check for different types of errors
       const isBackendError = error.code === 'ECONNREFUSED' || 
                            error.code === 'ENOTFOUND' || 
                            error.response?.status === 404 ||
                            error.response?.status === 500 ||
                            !error.response ||
                            (typeof error.response?.data === 'object' && Object.keys(error.response.data).length === 0);
-      
-      if (isBackendError) {
-        console.warn('⚠️ Backend não disponível - retornando feed vazio');
+      if (isBackendError && process.env.NODE_ENV === 'development') {
         return {
           items: [],
           posts: [],
@@ -50,8 +45,7 @@ export const feedService = {
           }
         };
       }
-      
-      throw new Error(error.response?.data?.message || 'Erro ao buscar posts do feed');
+      throw new Error(error.response?.data?.message || error.message || 'Erro ao buscar posts do feed');
     }
   },
 

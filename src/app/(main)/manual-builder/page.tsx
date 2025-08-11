@@ -40,6 +40,12 @@ interface ManualOutfit {
 export default function ManualBuilderPage() {
   const router = useRouter();
   const { wardrobe, isLoading, fetchWardrobe, searchWardrobe } = useWardrobe();
+  // Debug: mostrar wardrobe completo
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Wardrobe:', wardrobe);
+    }
+  }, [wardrobe]);
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [mannequinPreference, setMannequinPreference] = useState<'Woman' | 'Man' | 'Neutral'>('Woman');
   const [outfitName, setOutfitName] = useState('');
@@ -529,7 +535,7 @@ export default function ManualBuilderPage() {
                           key={selected.id}
                           className="flex items-center justify-between p-2 bg-muted rounded text-sm"
                         >
-                          <span>{selected.item.type}</span>
+                          <span>{selected.item.type || 'Tipo indefinido'}</span>
                           <Button
                             size="sm"
                             variant="ghost"
@@ -564,7 +570,7 @@ export default function ManualBuilderPage() {
                             }}
                           />
                           <span className="text-xs font-medium line-clamp-2">
-                            {selected.item.type}
+                            {selected.item.type || 'Tipo indefinido'}
                           </span>
                         </div>
                       ))}
@@ -742,14 +748,14 @@ export default function ManualBuilderPage() {
                     <div key={selected.id} className="flex items-center gap-4">
                       <div className="w-16 h-16 relative">
                         <Image
-                          src={selected.item.photoUrl}
-                          alt={selected.item.type}
+                          src={selected.item.photoUrl || '/placeholder-clothing.jpg'}
+                          alt={selected.item.type || 'Tipo indefinido'}
                           fill
                           className="object-cover rounded-md"
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium">{selected.item.type}</h3>
+                        <h3 className="font-medium">{selected.item.type || 'Tipo indefinido'}</h3>
                         <div className="flex gap-2 mt-1">
                           <Badge variant="outline">{selected.item.color}</Badge>
                           <Badge variant="outline">{selected.item.season}</Badge>

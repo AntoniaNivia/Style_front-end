@@ -13,33 +13,30 @@ import {
 class ProfileService {
   // Atualizar perfil do usuário
   async updateProfile(data: UpdateProfileData): Promise<ApiResponse> {
-    console.log('📝 Atualizando perfil:', data);
-    
     try {
+      console.log('📝 Atualizando perfil:', data);
       const response = await apiClient.put('/users/profile', data);
+      if (!response.data || (typeof response.data === 'object' && Object.keys(response.data).length === 0)) {
+        throw new Error('Resposta da API inválida ou vazia ao atualizar perfil.');
+      }
       console.log('✅ Perfil atualizado:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('❌ Erro ao atualizar perfil:', error);
-      
-      // Check for different types of errors
       const isBackendError = error.code === 'ECONNREFUSED' || 
                            error.code === 'ENOTFOUND' || 
                            error.response?.status === 404 ||
                            error.response?.status === 500 ||
                            !error.response ||
                            (typeof error.response?.data === 'object' && Object.keys(error.response.data).length === 0);
-      
-      if (isBackendError) {
-        console.warn('⚠️ Backend não disponível - simulando sucesso para atualização de perfil');
+      if (isBackendError && process.env.NODE_ENV === 'development') {
         return {
           success: true,
           data: data,
           message: 'Perfil será atualizado quando o backend estiver disponível'
         };
       }
-      
-      throw new Error(error.response?.data?.message || 'Erro ao atualizar perfil');
+      throw new Error(error.response?.data?.message || error.message || 'Erro ao atualizar perfil');
     }
   }
 
@@ -82,7 +79,7 @@ class ProfileService {
     console.log('📊 Buscando estatísticas do perfil...');
     
     try {
-      const response = await apiClient.get('/users/profile/stats');
+  const response = await apiClient.get('/api/users/profile/stats');
       console.log('✅ Estatísticas obtidas:', response.data);
       return response.data;
     } catch (error: any) {
@@ -121,7 +118,7 @@ class ProfileService {
     console.log(`👔 Buscando outfits do usuário (página ${page})...`);
     
     try {
-      const response = await apiClient.get(`/users/outfits?page=${page}&limit=${limit}`);
+  const response = await apiClient.get(`/api/users/outfits?page=${page}&limit=${limit}`);
       console.log('✅ Outfits obtidos:', response.data);
       return response.data;
     } catch (error: any) {
@@ -164,7 +161,7 @@ class ProfileService {
     console.log(`⭐ Buscando favoritos do usuário (página ${page})...`);
     
     try {
-      const response = await apiClient.get(`/users/favorites?page=${page}&limit=${limit}`);
+  const response = await apiClient.get(`/api/users/favorites?page=${page}&limit=${limit}`);
       console.log('✅ Favoritos obtidos:', response.data);
       return response.data;
     } catch (error: any) {
