@@ -57,7 +57,7 @@ export const mannequinService = {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 Usando dados locais de mannequin para desenvolvimento');
         return {
-          mannequinImageUrl: '/test-mannequin.png',
+          mannequinImageUrl: '/test-mannequin.svg',
           previewId: 'local-preview',
           itemsValidated: [],
           generationTime: '0s',
@@ -90,7 +90,7 @@ export const mannequinService = {
         return {
           id: previewId,
           status: 'completed',
-          imageUrl: '/test-mannequin.png',
+          imageUrl: '/test-mannequin.svg',
           generationTime: 0,
         };
       }
@@ -121,7 +121,7 @@ export const mannequinService = {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 Usando dados locais de gerações para desenvolvimento');
         return [
-          { id: 'local-1', status: 'completed', imageUrl: '/test-mannequin.png', generationTime: 0 },
+          { id: 'local-1', status: 'completed', imageUrl: '/test-mannequin.svg', generationTime: 0 },
         ];
       }
       throw error;

@@ -1,6 +1,9 @@
+
 'use client';
+import type { ClothingItem } from '@/lib/types';
 
 import React, { useState, useEffect } from 'react';
+import { useWardrobe } from '@/hooks/use-wardrobe';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { manualOutfitService } from '@/lib/services/manual-outfit-dynamic.service';
@@ -68,12 +71,44 @@ interface Pagination {
 }
 
 export default function ManualOutfitsPage() {
+  // Importa o guarda-roupa do contexto
+  const { wardrobe, fetchWardrobe } = useWardrobe();
+  // Garante que o wardrobe está carregado ao abrir a página
+  useEffect(() => {
+    fetchWardrobe();
+  }, []);
+
+  // Função para buscar os dados completos das peças pelo id
+  function getFullItemData(itemId: string) {
+    return wardrobe?.find((item: any) => item.id === itemId);
+  }
+
+  // Função para garantir que sempre renderiza as peças do look salvo
+  function getOutfitItems(outfit: ManualOutfit) {
+    if (outfit.items && outfit.items.length > 0) {
+      return outfit.items;
+    }
+    // Se não houver items, tenta buscar pelo selectedItems
+    if (outfit.selectedItems && Array.isArray(outfit.selectedItems)) {
+      return outfit.selectedItems
+        .map(id => getFullItemData(id))
+        .filter((item): item is ClothingItem => !!item)
+        .map(item => ({
+          id: item.id,
+          type: item.type,
+          color: item.color,
+          brand: (item as any).brand || '' // brand pode não existir, então usa any
+        }));
+    }
+    return [];
+  }
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   
   // State management
   const [outfits, setOutfits] = useState<ManualOutfit[]>([]);
+  // (Removido: já existe dentro do componente)
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +124,7 @@ export default function ManualOutfitsPage() {
   const [outfitToDelete, setOutfitToDelete] = useState<ManualOutfit | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [detailOutfit, setDetailOutfit] = useState<ManualOutfit | null>(null);
 
   // Load outfits
   const loadOutfits = async (page = 1, search = '', isPrivate?: boolean) => {
@@ -485,35 +521,62 @@ export default function ManualOutfitsPage() {
               </CardHeader>
 
               <CardContent className="pt-0">
-                {/* Items Preview */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shirt className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      {outfit.selectedItems?.length || 0} itens
-                    </span>
-                  </div>
-                  
-                  {outfit.items && outfit.items.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-1 mb-2">
-                      {outfit.items.slice(0, 4).map((item, index) => (
-                        <div
-                          key={index}
-                          className="aspect-square bg-gray-100 rounded-md flex items-center justify-center text-xs"
-                          style={{ backgroundColor: item.color ? `${item.color}20` : undefined }}
-                        >
-                          <span className="font-medium">
-                            {item.type?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                {/* Itens de roupa */}
+                <div className="mb-2">
+                  <span className="font-bold text-xs">Peças:</span>
+                  {getOutfitItems(outfit).length > 0 ? (
+                    <ul className="list-disc ml-4 text-xs">
+                      {getOutfitItems(outfit).map((item, idx) => (
+                        <li key={item.id || idx}>
+                          {item.type || 'Tipo indefinido'}
+                          {item.color ? ` - ${item.color}` : ''}
+                          {item.brand ? ` (${item.brand})` : ''}
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   ) : (
-                    <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center text-sm text-gray-500">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Visualização não disponível
-                    </div>
+                    <span className="ml-2 text-gray-500">Nenhuma peça cadastrada</span>
                   )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleDuplicate(outfit)}
+                    disabled={duplicatingId === outfit.id}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    {duplicatingId === outfit.id ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={() => setOutfitToDelete(outfit)}
+                    disabled={deletingId === outfit.id}
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    {deletingId === outfit.id ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={() => router.push(`/manual-outfits/preview/${outfit.id}`)}
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
                 </div>
 
                 {/* Tags */}
@@ -576,7 +639,18 @@ export default function ManualOutfitsPage() {
                       <Trash2 className="h-3 w-3" />
                     )}
                   </Button>
+
+                  <Button
+                    onClick={() => setDetailOutfit(outfit)}
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
                 </div>
+
+  {/* Modal removido. Preview agora é feito por redirecionamento. */}
               </CardContent>
             </Card>
           ))}

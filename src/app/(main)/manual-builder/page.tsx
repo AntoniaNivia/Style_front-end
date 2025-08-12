@@ -16,6 +16,7 @@ import { useMockAuth } from '@/hooks/use-mock-auth';
 import { ClothingItem } from '@/lib/types';
 import { mannequinService } from '@/lib/services/mannequin.service';
 import { manualOutfitService } from '@/lib/services/manual-outfit-dynamic.service';
+import { generateOutfitWithAI } from '@/lib/services/generate-outfit-flow.service';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { debugApi } from '@/lib/debug-api';
@@ -59,6 +60,62 @@ export default function ManualBuilderPage() {
   const [mannequinImage, setMannequinImage] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [isGeneratingMannequin, setIsGeneratingMannequin] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  // Gera look com IA
+  const generateOutfitAI = async () => {
+    setIsGeneratingAI(true);
+    try {
+      toast({ title: 'IA', description: 'Gerando look com IA...' });
+      const input = {
+        occasion: notes || 'casual',
+        season: selectedItems[0]?.item.season || 'all',
+        style: outfitName || 'moderno',
+        colors: selectedItems.map(i => i.item.color),
+        excludeItems: [],
+        mannequinPreference,
+      };
+      const result = await generateOutfitWithAI(input);
+      // Mapear resultado da IA para itens do wardrobe
+      const aiSelectedItems: SelectedItem[] = [];
+      result.selectedItems.forEach(aiItem => {
+        const wardrobeItem = wardrobe.find(w => w.id === aiItem.id);
+        if (wardrobeItem) {
+          aiSelectedItems.push({
+            id: wardrobeItem.id,
+            item: wardrobeItem,
+            category: wardrobeItem.type
+          });
+        }
+      });
+      setSelectedItems(aiSelectedItems);
+      setOutfitName(result.styleNotes || outfitName);
+      setNotes(result.reasoning || notes);
+      toast({ title: 'Look IA Gerado!', description: result.reasoning });
+
+      // Gerar manequim real com as peças sugeridas pela IA
+      if (aiSelectedItems.length > 0) {
+        setIsGeneratingMannequin(true);
+        try {
+          const mannequinData = await mannequinService.generateMannequin({
+            selectedItems: aiSelectedItems.map(item => item.id),
+            mannequinPreference,
+            outfitName: result.styleNotes || outfitName,
+            notes: result.reasoning || notes
+          });
+          setMannequinImage(mannequinData.mannequinImageUrl);
+          setPreviewId(mannequinData.previewId);
+        } catch (err) {
+          toast({ title: 'Erro ao gerar manequim', description: 'Falha ao gerar manequim com IA', variant: 'destructive' });
+        } finally {
+          setIsGeneratingMannequin(false);
+        }
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro IA', description: err.message || 'Falha ao gerar look com IA', variant: 'destructive' });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   useEffect(() => {
     fetchWardrobe();
@@ -291,7 +348,12 @@ export default function ManualBuilderPage() {
         items: selectedItems.map(item => ({
           id: item.id,
           type: item.item.type,
-          color: item.item.color
+          color: item.item.color,
+          season: item.item.season,
+          occasion: item.item.occasion,
+          tags: item.item.tags,
+          photoUrl: item.item.photoUrl,
+          brand: (item.item as any).brand || ''
         })),
         notes: generatedOutfit.notes || '',
         tags: ['manual', mannequinPreference.toLowerCase()],
@@ -620,23 +682,43 @@ export default function ManualBuilderPage() {
                   </div>
                 </div>
 
-                <Button 
-                  onClick={generateMannequinImage}
-                  disabled={selectedItems.length === 0 || isGenerating}
-                  className="w-full"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Gerar Preview
-                    </>
-                  )}
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    onClick={generateMannequinImage}
+                    disabled={selectedItems.length === 0 || isGenerating}
+                    className="w-full"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando Preview...
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Gerar Preview
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={generateOutfitAI}
+                    disabled={isGeneratingAI}
+                    className="w-full"
+                  >
+                    {isGeneratingAI ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando com IA...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Gerar Look com IA
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

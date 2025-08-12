@@ -41,7 +41,6 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                 });
                 return;
             }
-            
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 toast({
@@ -51,26 +50,20 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                 });
                 return;
             }
-            
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result as string;
-                
-                // Create image to get dimensions and potentially resize
+                // Apenas gera preview, não chama IA automaticamente
                 const img = document.createElement('img');
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
                     if (!ctx) {
                         setPreviewImage(result);
                         return;
                     }
-                    
-                    // Optimize image size (max 1024px on longest side)
                     const maxSize = 1024;
                     let { width, height } = img;
-                    
                     if (width > maxSize || height > maxSize) {
                         if (width > height) {
                             height = (height * maxSize) / width;
@@ -80,19 +73,13 @@ function AddItemDialog({ onOpenChange }: { onOpenChange: (open: boolean) => void
                             height = maxSize;
                         }
                     }
-                    
                     canvas.width = width;
                     canvas.height = height;
-                    
-                    // Draw image with better quality
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Convert to base64 with good quality
                     const optimizedImage = canvas.toDataURL('image/jpeg', 0.9);
                     setPreviewImage(optimizedImage);
-                    
                     console.log('🖼️ Image optimized:', {
                         originalSize: file.size,
                         originalDimensions: `${img.naturalWidth}x${img.naturalHeight}`,

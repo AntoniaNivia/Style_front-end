@@ -63,7 +63,8 @@ export const manualOutfitService = {
       const apiData = {
         ...data,
         itemIds: data.selectedItems, // Backend expects itemIds
-        selectedItems: data.selectedItems // Keep for backward compatibility
+        selectedItems: data.selectedItems, // Keep for backward compatibility
+        items: data.items && data.items.length > 0 ? data.items : (data.selectedItems ? data.selectedItems.map(id => ({ id })) : [])
       };
       
       const response = await api.post<OutfitResponse>('/api/manual-outfits', apiData);
@@ -410,5 +411,38 @@ export const manualOutfitService = {
     localStorage.removeItem('manual_outfits_cache');
     localStorage.removeItem('demo_outfits_removed');
     console.log('🧹 Local outfit data cleared');
+  },
+
+  /**
+   * Buscar um look manual pelo ID
+   * Funciona com API real, local e demo
+   */
+  async getOutfitById(outfitId: string): Promise<ManualOutfit | null> {
+    try {
+      // Local/demo outfit
+      if (outfitId.startsWith('local_') || outfitId.startsWith('demo-')) {
+        const local = this.getLocalOutfits().find(o => o.id === outfitId);
+        if (local) return local;
+        const demo = this.getDemoOutfits().find(o => o.id === outfitId);
+        if (demo) return demo;
+        return null;
+      }
+      // API outfit
+      const response = await api.get<OutfitResponse>(`/api/manual-outfits/${outfitId}`);
+      if (response.data.success && response.data.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error: any) {
+      // Fallback para local/demo em dev
+      if (process.env.NODE_ENV === 'development') {
+        const local = this.getLocalOutfits().find(o => o.id === outfitId);
+        if (local) return local;
+        const demo = this.getDemoOutfits().find(o => o.id === outfitId);
+        if (demo) return demo;
+        return null;
+      }
+      return null;
+    }
   }
 };
